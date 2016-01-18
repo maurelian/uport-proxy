@@ -1,9 +1,9 @@
 // A Default proxy implementation
 // - Only checks that msg.sender is one of n owners
 
-import "Implemenation.sol";
+import "Implementation.sol";
 
-contract OneOfN is Imeplementation {
+contract OneOfN is Implementation {
     mapping( address => bool ) public owners;
 
     function OneOfN(address _owner) {
