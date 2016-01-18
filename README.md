@@ -1,14 +1,14 @@
 # Proxy
 
-- Core contract is: [Proxy.sol](src/proxy.sol)
-- Default implementation used is: [Implementation.sol](examples/implementation.sol)
+- Core contract is: [Proxy.sol](src/Proxy.sol)
+- Default implementation used is: [Implementation.sol](examples/Implementation.sol)
 
 Example custom implementations:
 
-- [ChallengePeriod.sol](examples/challengeperiod.sol)
-- [Revokable.sol](examples/revokable.sol)
-- [OneOfN.sol](examples/oneofn.sol)
-- [Refunder.sol](examples/refunder.sol)
+- [ChallengePeriod.sol](examples/ChallengePeriod.sol)
+- [Revokable.sol](examples/Revokable.sol)
+- [OneOfN.sol](examples/OneOfN.sol)
+- [Refunder.sol](examples/Refunder.sol)
 
 ## Changelog
 
