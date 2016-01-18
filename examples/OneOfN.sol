@@ -3,7 +3,7 @@
 
 import "Implemenation.sol";
 
-contract OneOfN is Imeplementation {
+contract OneOfN is Implementation {
     mapping( address => bool ) public owners;
 
     function OneOfN(address _owner) {
