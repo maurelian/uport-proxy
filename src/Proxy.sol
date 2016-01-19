@@ -6,6 +6,8 @@ import "Owned.sol";
 
 contract Proxy is Owned {
     function forward(address destination, uint value, bytes data) onlyOwner {
-        destination.call.value(value)(data);
+        if (!destination.call.value(value)(data)) {
+            throw;
+        }
     }
 }
