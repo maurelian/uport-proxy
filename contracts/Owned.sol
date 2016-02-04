@@ -1,7 +1,7 @@
 // A base Owned contract
 
 contract Owned {
-    address owner;
+    address public owner;
     modifier onlyOwner(){ if (isOwner(msg.sender)) _ }
     modifier ifOwner(address sender) { if(isOwner(sender)) _ }
 
