@@ -7,7 +7,7 @@
     "example": "examples"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha --reporter spec test/*.js"
   },
   "repository": {
     "type": "git",
@@ -19,7 +19,17 @@
     "proxy",
     "contract"
   ],
-  "author": "d11e9",
+  "devDependencies": {
+    "mocha" : "*",
+    "chai" : "*",
+    "ether-pudding" : "*",
+    "bluebird" : "*",
+    "web3" : "*",
+    "eth-lightwallet" : "*",
+    "babelify": "*",
+    "babel-preset-es2015": "*"
+  },
+  "authors": ["d11e9", "Christian Lundkvist"],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/ConsenSys/uport-proxy/issues"
