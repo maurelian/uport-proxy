@@ -16,16 +16,13 @@ Proxy = pudding.whisk({abi: Proxy.abi, binary: Proxy.binary, contract_name: Prox
 var TestRegistry = require("../environments/development/contracts/TestRegistry.sol.js").load(pudding);
 TestRegistry = pudding.whisk({abi: TestRegistry.abi, binary: TestRegistry.binary, contract_name: TestRegistry.contract_name})
 
-var OwnerWithAdmin = require("../environments/development/contracts/OwnerWithAdmin.sol.js").load(pudding);
-OwnerWithAdmin = pudding.whisk({abi: OwnerWithAdmin.abi, binary: OwnerWithAdmin.binary, contract_name: OwnerWithAdmin.contract_name})
-
-
 var proxy;
 var testReg;
 var logNumber = 1234;
 
-describe("Proxy contract test", function () {
-  it("Creates and uses a proxy", function(done) {
+describe("Simple Proxy contracts", function () {
+  this.timeout(10000);
+  it("Changes the owner of a proxy", function(done) {
     web3.eth.getAccounts(function(err, acct) {
       var newContracts = [Proxy.new({from: acct[0]}),
                           TestRegistry.new({from: acct[0]})];
@@ -51,7 +48,7 @@ describe("Proxy contract test", function () {
   });
 
 
-  it("Changes the owner of a proxy", function(done) {
+  it("Creates and uses a proxy", function(done) {
     web3.eth.getAccounts(function(err, acct) {
       var newContracts = [Proxy.new({from: acct[0]}),
                           TestRegistry.new({from: acct[0]}),
