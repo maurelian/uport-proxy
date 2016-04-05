@@ -1,26 +1,23 @@
-# Proxy
+# Uport-Proxy
 
-- Core contract is: [Proxy.sol](src/Proxy.sol)
-- Default implementation used is: [Implementation.sol](examples/Implementation.sol)
+Proxy contracts for uPort & identity systems. Proxy contracts are a
+way of maintaining a persistent identifier/address on a system. The
+Proxy contract will interact with other smart contract and it has
+access control that allows the user to replace and rotate private keys
+while maintaining a persistent identfier.
 
-Example custom implementations:
+[More info on Proxy contracts](https://docs.google.com/document/d/1fq0B0T5d0uTJM9rwcT0u2UUCPWzUSYx7GSvZidWVghI)
 
-- [ChallengePeriod.sol](examples/ChallengePeriod.sol)
-- [Revokable.sol](examples/Revokable.sol)
-- [OneOfN.sol](examples/OneOfN.sol)
-- [Refunder.sol](examples/Refunder.sol)
+* Core Proxy contract is: [Proxy.sol](contracts/Proxy.sol)
 
-## Changelog
+Interesting Owner contracts are
 
-- Explore "option 2" validator proxy.
-- Add some example validators.
-- Switch from validator proxy to single implementor proxy.
-- Explore second `forward` function signature which takes signed transactions
-- Make sure proxy forward is only ever called by owner
-- Make sure all forwarded txs from proxy have proxy as msg.sender
+## OwnerWithAdmin
 
-## Todos
+Owner contract with an User key that controls the proxy
+contract. There is also an Admin key that can unilaterally replace the
+User key.
 
-- Fix ecrecover (bytes/bytes32) in implementations
-- Calculate gas used for refunder implementation
-- Make challengePeriod example only apply to implementation change
+## OwnerWithMetaTx
+
+Owner contract that implements Metatransactions (see the document above for more info).

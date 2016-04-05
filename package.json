@@ -1,13 +1,13 @@
 {
   "name": "uport-proxy",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Ethereum solidity proxy contract",
   "main": "index.js",
   "directories": {
     "example": "examples"
   },
   "scripts": {
-    "test": "mocha --reporter spec test/*.js"
+    "test": "node load_wallet.js && mocha --reporter spec test/*.js"
   },
   "repository": {
     "type": "git",
@@ -25,9 +25,11 @@
     "ether-pudding" : "*",
     "bluebird" : "*",
     "web3" : "*",
-    "eth-lightwallet" : "*",
+    "eth-lightwallet" : "pelle/eth-lightwallet#vault-and-signer",
     "babelify": "*",
-    "babel-preset-es2015": "*"
+    "babel-preset-es2015": "*",
+    "hooked-web3-provider" : "*",
+    "web3-provider-engine" : "*"
   },
   "authors": ["d11e9", "Christian Lundkvist"],
   "license": "MIT",
