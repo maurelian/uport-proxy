@@ -1,5 +1,5 @@
-import "Proxy.sol";
-import "OwnerWithAdmin.sol";
+import "Proxy";
+import "OwnerWithAdmin";
 
 contract IdentityFactory {
     event IdentityCreated(

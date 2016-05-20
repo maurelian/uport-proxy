@@ -1,4 +1,4 @@
-import "Proxy.sol";
+import "Proxy";
 
 contract OwnerWithAdmin {
 
