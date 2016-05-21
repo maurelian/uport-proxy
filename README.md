@@ -27,6 +27,14 @@ Owner contract that implements Metatransactions (see the document above for more
 
 The IdentityFactory creates a proxy contract with an associated controller. When a new identity is created an event is fired.
 
+### Deployed contract
+
+The IdentityFactory is deployed on the ConsenSys testnet at the address
+
+```
+0x0b6949ea6dbfd1d122afb67a08b310329e12b67d
+```
+
 ### Example usage
 You can watch the event to see when an identity has been created from a specific address.
 

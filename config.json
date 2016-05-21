@@ -1,0 +1,25 @@
+{
+  "mainnet": {
+    "web3Host": "frontier-lb.ether.camp",
+    "web3Port": "80",
+    "ipfsHost": "104.131.53.68",
+    "ipfsPort": "5001",
+    "ipfsWebPort": "8080"
+  },
+  "consensys_testnet": {
+    "web3Host": "104.236.65.136",
+    "web3Port": "8545",
+    "ipfsHost": "104.236.65.136",
+    "ipfsPort": "5001",
+    "ipfsWebPort": "8080",
+    "IdentityFactory": "0x0b6949ea6dbfd1d122afb67a08b310329e12b67d"
+  },
+  "local": {
+    "web3Host": "localhost",
+    "web3Port": "8545",
+    "ipfsHost": "localhost",
+    "ipfsPort": "5001",
+    "ipfsWebPort": "8080"
+  },
+  "selection": "consensys_testnet"
+}
