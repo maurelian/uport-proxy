@@ -1,84 +1,86 @@
-var expect          = require('chai').expect;
-var Promise         = require('bluebird');
-var Web3            = require('web3');
-var web3            = new Web3();
-var web3prov        = new web3.providers.HttpProvider('http://localhost:8545');
-web3.setProvider(web3prov);
-
-var pudding         = require('ether-pudding');
-pudding.setWeb3(web3);
-
 var lightwallet = require('eth-lightwallet');
 
-var Proxy = require("../environments/development/contracts/Proxy.sol.js").load(pudding);
-Proxy = pudding.whisk({abi: Proxy.abi, binary: Proxy.binary, contract_name: Proxy.contract_name})
+const LOG_NUMBER_1 = 1234;
+const LOG_NUMBER_2 = 2345;
 
-var TestRegistry = require("../environments/development/contracts/TestRegistry.sol.js").load(pudding);
-TestRegistry = pudding.whisk({abi: TestRegistry.abi, binary: TestRegistry.binary, contract_name: TestRegistry.contract_name})
+contract("OwnerWithAdmin", (accounts) => {
+  var ownerWithAdmin;
+  var testReg;
+  var user1;
+  var user2;
+  var admin;
 
-var OwnerWithAdmin = require("../environments/development/contracts/OwnerWithAdmin.sol.js").load(pudding);
-OwnerWithAdmin = pudding.whisk({abi: OwnerWithAdmin.abi, binary: OwnerWithAdmin.binary, contract_name: OwnerWithAdmin.contract_name})
-
-var proxy;
-var testReg;
-var ownerWithAdmin;
-var user;
-var user1;
-var admin;
-var logNumber = 1234;
-var logNumber1 = 5678;
-var data;
-
-describe("Admin-style Proxy Owner", function () {
-  this.timeout(10000);
-  it("Creates and uses a proxy with Admin-style Owner", function(done) {
-    web3.eth.getAccounts(function(err, acct) {
-      user = acct[0];
-      user1 = acct[1];
-      admin = acct[2];
-      var newContracts = [Proxy.new({from: user}),
-                          TestRegistry.new({from: user})
-                         ];
-      Promise.all(newContracts).then(function(cc) {
-        proxy = cc[0];
-        testReg = cc[1];
-        return OwnerWithAdmin.new(proxy.address, user, admin, {from: user});
-      }).then(function (newOwner) {
-        ownerWithAdmin = newOwner;
-        // Transfer ownership to the owner Contract.
-        return proxy.transfer(ownerWithAdmin.address, {from:user});
-      }).then(function () {
-        // Encode the transaction to send to the Owner contract
-        data = '0x' + lightwallet.txutils._encodeFunctionTxData('register', ['uint256'], [logNumber]);
-        return ownerWithAdmin.sendTx(testReg.address, 0, data, {from: user});
-      }).then(function() {
-        // Verify that the proxy address is logged as the sender
-        return testReg.registry.call(proxy.address);
-      }).then(function(regData) {
-        expect(regData.toNumber()).to.equal(logNumber);
-        // update the user key
-        return ownerWithAdmin.updateUserKey(user1, {from: admin});
-      }).then(function() {
-        // Try to send from old key
-        data = '0x' + lightwallet.txutils._encodeFunctionTxData('register', ['uint256'], [logNumber1]);
-        return ownerWithAdmin.sendTx(testReg.address, 0, data, {from: user});
-      }).then(function() {
-        return testReg.registry.call(proxy.address);
-      }).then(function(regData) {
-        // Make sure the logged number hasn't changed
-        expect(regData.toNumber()).to.equal(logNumber);
-        // Send with new key
-        return ownerWithAdmin.sendTx(testReg.address, 0, data, {from: user1});
-      }).then(function() {
-        return testReg.registry.call(proxy.address);
-      }).then(function(regData) {
-        // Make sure the logged number has changed now
-        expect(regData.toNumber()).to.equal(logNumber1);
-        done();
-      }).catch(done)
-    })
+  before(() => {
+    // Truffle deploys contracts with accounts[0]
+    proxy = Proxy.deployed();
+    testReg = TestRegistry.deployed();
+    user1 = accounts[0];
+    user2 = accounts[1];
+    admin = accounts[2];
   });
 
+  it("Correctly deploys contract", (done) => {
+    OwnerWithAdmin.new(proxy.address, user1, admin).then((newOWA) => {
+      ownerWithAdmin = newOWA;
+      ownerWithAdmin.proxy().then((proxyAddress) => {
+        assert.equal(proxyAddress, proxy.address);
+        return ownerWithAdmin.userKey();
+      }).then((userKey) => {
+        assert.equal(userKey, user1);
+        return ownerWithAdmin.adminKey();
+      }).then((adminKey) => {
+        assert.equal(adminKey, admin);
+        done();
+      }).catch(done);
+    });
+  });
 
+  it("Only sends transactions from correct user", (done) => {
+    // Transfer ownership of proxy to the controller contract.
+    proxy.transfer(ownerWithAdmin.address, {from:user1}).then(() => {
+      // Encode the transaction to send to the Owner contract
+      var data = '0x' + lightwallet.txutils._encodeFunctionTxData('register', ['uint256'], [LOG_NUMBER_1]);
+      return ownerWithAdmin.sendTx(testReg.address, 0, data, {from: user1});
+    }).then(() => {
+      // Verify that the proxy address is logged as the sender
+      return testReg.registry.call(proxy.address);
+    }).then((regData) => {
+      assert.equal(regData.toNumber(), LOG_NUMBER_1, "User1 should be able to send transaction");
+
+      // Encode the transaction to send to the Owner contract
+      var data = '0x' + lightwallet.txutils._encodeFunctionTxData('register', ['uint256'], [LOG_NUMBER_2]);
+      return ownerWithAdmin.sendTx(testReg.address, 0, data, {from: user2});
+    }).then(() => {
+      // Verify that the proxy address is logged as the sender
+      return testReg.registry.call(proxy.address);
+    }).then((regData) => {
+      assert.notEqual(regData.toNumber(), LOG_NUMBER_2, "User2 should not be able to send transaction");
+      done();
+    }).catch(done);
+  });
+
+  it("Only updates userKey if admin", (done) => {
+    ownerWithAdmin.updateUserKey(user2, {from: user2}).then(() => {
+      return ownerWithAdmin.userKey();
+    }).then((userKey) => {
+      assert.notEqual(userKey, user2, "Non-admin should not be able to change user key");
+      return ownerWithAdmin.updateUserKey(user2, {from: admin})
+    }).then(() => {
+      return ownerWithAdmin.userKey();
+    }).then((userKey) => {
+      assert.equal(userKey, user2, "Admin should be able to change user key");
+      done();
+    }).catch(done);
+  });
+
+  it("Correctly performs transfer", (done) => {
+    ownerWithAdmin.transferOwnership(user1, {from: admin}).then(() => {
+      return proxy.isOwner.call(user1);
+    }).then((isOwner) => {
+      assert.isTrue(isOwner, "Owner of proxy should be changed");
+      done();
+    }).catch(done);
+  });
 });
+
 
