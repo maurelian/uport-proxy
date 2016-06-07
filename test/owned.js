@@ -1,4 +1,4 @@
-contract("Owned", function(accounts) {
+contract("Owned", (accounts) => {
   var owned
 
   before(() => {
