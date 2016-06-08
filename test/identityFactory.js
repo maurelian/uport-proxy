@@ -22,21 +22,29 @@ contract("IdentityFactory", (accounts) => {
   });
 
   it("Correctly creates proxy and controller contract", (done) => {
-    identityFactory.CreateProxyWithController(user1, admin, {from: user2}).then(() => {
-      // Check for event
-      // TODO - test event
-      return identityFactory.senderToProxy.call(user2);
-    }).then((createdProxyAddress) => {
-      assert.equal(web3.eth.getCode(createdProxyAddress),
+    var event = identityFactory.IdentityCreated({creator: user2})
+    event.watch((error, result) => {
+      // Check that event has addresses to correct contracts
+      assert.equal(web3.eth.getCode(result.args.proxy),
                    web3.eth.getCode(deployedProxy.address),
                    "Created proxy should have correct code");
-      proxy = Proxy.at(createdProxyAddress);
-      return proxy.owner.call();
-    }).then((createdControllerAddress) => {
-      assert.equal(web3.eth.getCode(createdControllerAddress),
+      assert.equal(web3.eth.getCode(result.args.controller),
                    web3.eth.getCode(deployedOwnerWithAdmin.address),
                    "Created controller should have correct code");
-      ownerWithAdmin = OwnerWithAdmin.at(createdControllerAddress);
+      proxy = Proxy.at(result.args.proxy);
+      ownerWithAdmin = OwnerWithAdmin.at(result.args.controller);
+      // Check that the mapping has correct proxy address
+      identityFactory.senderToProxy.call(user2).then((createdProxyAddress) => {
+        assert(createdProxyAddress, proxy.address, "Mapping should have the same address as event");
+        done();
+      }).catch(done);
+    });
+    identityFactory.CreateProxyWithController(user1, admin, {from: user2})
+  });
+
+  it("Created proxy should have correct state", (done) => {
+    return proxy.owner.call().then((createdControllerAddress) => {
+      assert.equal(createdControllerAddress, ownerWithAdmin.address);
       done();
     }).catch(done);
   });
