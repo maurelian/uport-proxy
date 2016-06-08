@@ -43,7 +43,7 @@ contract("IdentityFactory", (accounts) => {
   });
 
   it("Created proxy should have correct state", (done) => {
-    return proxy.owner.call().then((createdControllerAddress) => {
+    proxy.owner.call().then((createdControllerAddress) => {
       assert.equal(createdControllerAddress, ownerWithAdmin.address);
       done();
     }).catch(done);

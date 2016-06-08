@@ -40,7 +40,7 @@ contract("OwnerWithAdmin", (accounts) => {
     proxy.transfer(ownerWithAdmin.address, {from:user1}).then(() => {
       // Encode the transaction to send to the Owner contract
       var data = '0x' + lightwallet.txutils._encodeFunctionTxData('register', ['uint256'], [LOG_NUMBER_1]);
-      return ownerWithAdmin.sendTx(testReg.address, 0, data, {from: user1});
+      return ownerWithAdmin.forward(testReg.address, 0, data, {from: user1});
     }).then(() => {
       // Verify that the proxy address is logged as the sender
       return testReg.registry.call(proxy.address);
@@ -49,7 +49,7 @@ contract("OwnerWithAdmin", (accounts) => {
 
       // Encode the transaction to send to the Owner contract
       var data = '0x' + lightwallet.txutils._encodeFunctionTxData('register', ['uint256'], [LOG_NUMBER_2]);
-      return ownerWithAdmin.sendTx(testReg.address, 0, data, {from: user2});
+      return ownerWithAdmin.forward(testReg.address, 0, data, {from: user2});
     }).then(() => {
       // Verify that the proxy address is logged as the sender
       return testReg.registry.call(proxy.address);
