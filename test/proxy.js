@@ -1,74 +1,52 @@
-var expect          = require('chai').expect;
-var Promise         = require('bluebird');
-var Web3            = require('web3');
-var web3            = new Web3();
-var web3prov        = new web3.providers.HttpProvider('http://localhost:8545');
-web3.setProvider(web3prov);
-
-var pudding         = require('ether-pudding');
-pudding.setWeb3(web3);
-
 var lightwallet = require('eth-lightwallet');
 
-var Proxy = require("../environments/development/contracts/Proxy.sol.js").load(pudding);
-Proxy = pudding.whisk({abi: Proxy.abi, binary: Proxy.binary, contract_name: Proxy.contract_name})
+const LOG_NUMBER_1 = 1234;
+const LOG_NUMBER_2 = 2345;
 
-var TestRegistry = require("../environments/development/contracts/TestRegistry.sol.js").load(pudding);
-TestRegistry = pudding.whisk({abi: TestRegistry.abi, binary: TestRegistry.binary, contract_name: TestRegistry.contract_name})
+contract("Proxy", (accounts) => {
+  var proxy
+  var testReg
 
-var proxy;
-var testReg;
-var logNumber = 1234;
-
-describe("Simple Proxy contracts", function () {
-  this.timeout(10000);
-  it("Changes the owner of a proxy", function(done) {
-    web3.eth.getAccounts(function(err, acct) {
-      var newContracts = [Proxy.new({from: acct[0]}),
-                          TestRegistry.new({from: acct[0]})];
-      Promise.all(newContracts).then(function(cc) {
-        proxy = cc[0];
-        testReg = cc[1];
-
-        // Change owner
-        return proxy.transfer(acct[1], {from:acct[0]});
-      }).then(function () {
-        // Encode the transaction to send to the proxy contract
-        var data = lightwallet.txutils._encodeFunctionTxData('register', ['uint256'], [logNumber]);
-        // Send forward request from new owner
-        return proxy.forward(testReg.address, 0, '0x' + data, {from:acct[1]});
-      }).then(function() {
-        // Verify that the proxy address is logged
-        return testReg.registry.call(proxy.address);
-      }).then(function(regData) {
-        expect(regData.toNumber()).to.equal(logNumber);
-        done();
-      }).catch(done)
-    })
+  before(() => {
+    // Truffle deploys contracts with accounts[0]
+    proxy = Proxy.deployed();
+    testReg = TestRegistry.deployed();
   });
 
-
-  it("Creates and uses a proxy", function(done) {
-    web3.eth.getAccounts(function(err, acct) {
-      var newContracts = [Proxy.new({from: acct[0]}),
-                          TestRegistry.new({from: acct[0]}),
-                         ];
-      Promise.all(newContracts).then(function(cc) {
-        proxy = cc[0];
-        testReg = cc[1];
-        // Encode the transaction to send to the proxy contract
-        var data = lightwallet.txutils._encodeFunctionTxData('register', ['uint256'], [logNumber]);
-        return proxy.forward(testReg.address, 0, '0x' + data, {from:acct[0]});
-      }).then(function() {
-        // Verify that the proxy address is logged
-        return testReg.registry.call(proxy.address);
-      }).then(function(regData) {
-        expect(regData.toNumber()).to.equal(logNumber);
-        done();
-      }).catch(done)
-    })
+  it("Owner can send trasaction", (done) => {
+    // Encode the transaction to send to the proxy contract
+    var data = lightwallet.txutils._encodeFunctionTxData('register', ['uint256'], [LOG_NUMBER_1]);
+    // Send forward request from the owner
+    proxy.forward(testReg.address, 0, '0x' + data, {from: accounts[0]}).then(() => {
+      return testReg.registry.call(proxy.address);
+    }).then((regData) => {
+      assert.equal(regData.toNumber(), LOG_NUMBER_1)
+      done();
+    }).catch(done);
   });
 
+  it("Non-owner can't send trasaction", (done) => {
+    // Encode the transaction to send to the proxy contract
+    var data = lightwallet.txutils._encodeFunctionTxData('register', ['uint256'], [LOG_NUMBER_2]);
+    // Send forward request from a non-owner
+    proxy.forward(testReg.address, 0, '0x' + data, {from: accounts[1]}).then(() => {
+      return testReg.registry.call(proxy.address);
+    }).then((regData) => {
+      assert.notEqual(regData.toNumber(), LOG_NUMBER_2)
+      done();
+    }).catch(done);
+  });
 
+  it("Should throw if function call fails", (done) => {
+    var errorThrown = false;
+    // Encode the transaction to send to the proxy contract
+    var data = lightwallet.txutils._encodeFunctionTxData('testThrow', [], []);
+    proxy.forward(testReg.address, 0, '0x' + data, {from: accounts[0]}).catch((e) => {
+      errorThrown = true;
+    }).then(() => {
+      assert.isTrue(errorThrown, "An error should have been thrown");
+      done();
+    }).catch(done);
+  });
 });
 
