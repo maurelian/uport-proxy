@@ -57,3 +57,8 @@ var proxy = proxyContract.at(proxyAddress);
 var controller = ownerwithadminContract.at(controllerAddress);
 ```
 
+## Testing
+Tests are run using truffle
+```
+$ truffle test
+```
