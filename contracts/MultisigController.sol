@@ -1,6 +1,6 @@
-import "Proxy";
+import "Proxy.sol";
 
-contract OwnerWithMultisig {
+contract MultisigController {
 
   Proxy public proxy;
   address[] public users;
@@ -21,7 +21,7 @@ contract OwnerWithMultisig {
 
   modifier onlyUser { if (isUser[msg.sender]) _}
 
-  function OwnerWithMultisig(address proxyAddress,
+  function MultisigController(address proxyAddress,
                              address[] _users,
                              uint _numSigsNeeded
                             ) {

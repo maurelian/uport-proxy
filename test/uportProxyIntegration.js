@@ -13,7 +13,7 @@ contract("Uport proxy integration tests", (accounts) => {
   var identityFactory;
   var testReg;
   var proxy;
-  var ownerWithAdmin;
+  var basicController;
 
   var proxySigner;
   var hdSigner;
@@ -41,7 +41,7 @@ contract("Uport proxy integration tests", (accounts) => {
     var event = identityFactory.IdentityCreated({creator: user})
     event.watch((error, result) => {
       proxy = Proxy.at(result.args.proxy);
-      ownerWithAdmin = OwnerWithAdmin.at(result.args.controller);
+      basicController = BasicController.at(result.args.controller);
       done();
     });
     identityFactory.CreateProxyWithController(user, admin, {from: user}).catch(done);
@@ -49,7 +49,7 @@ contract("Uport proxy integration tests", (accounts) => {
 
   it("Use proxy for simple function call", (done) => {
     // Set up the new Proxy provider
-    proxySigner = new Signer(new ProxySigner(proxy.address, hdSigner, ownerWithAdmin.address));
+    proxySigner = new Signer(new ProxySigner(proxy.address, hdSigner, basicController.address));
     var web3ProxyProvider = new HookedWeb3Provider({
       host: 'http://localhost:8545',
       transaction_signer: proxySigner

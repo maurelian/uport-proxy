@@ -1,30 +1,21 @@
 import "Proxy.sol";
 
-contract OwnerWithMetaTx {
+contract BasicController {
 
   Proxy public proxy;
   address public userKey;
   address public adminKey;
-  uint public referenceNonce;
 
   modifier only(address key) { if (msg.sender == key) _}
 
-  function OwnerWithMetaTx(address proxyAddress, address _userKey, address _adminKey) {
+  function BasicController(address proxyAddress, address _userKey, address _adminKey) {
     proxy = Proxy(proxyAddress);
     userKey = _userKey;
     adminKey = _adminKey;
-    referenceNonce = 0;
   }
 
-  function sendTx(address destination, uint value, bytes data, uint nonce, uint8 v, bytes32 r, bytes32 s) {
-
-    var h = sha3(destination, bytes32(value), bytes32(nonce), data);
-    var addressFromSig = ecrecover(h,v,r,s);
-    
-    if (nonce == referenceNonce && addressFromSig == userKey) {
-      proxy.forward(destination, value, data);
-      referenceNonce += 1;
-    }
+  function forward(address destination, uint value, bytes data) only(userKey) {
+    proxy.forward(destination, value, data);
   }
 
   function updateUserKey(address newUserKey) only(adminKey) {

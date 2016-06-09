@@ -13,7 +13,7 @@
       "TestRegistry",
       "Proxy",
       "Owned",
-      "OwnerWithAdmin",
+      "BasicController",
       "IdentityFactory"
   ],
   "rpc": {
