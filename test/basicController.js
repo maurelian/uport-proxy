@@ -3,7 +3,7 @@ var lightwallet = require('eth-lightwallet');
 const LOG_NUMBER_1 = 1234;
 const LOG_NUMBER_2 = 2345;
 
-contract("OwnerWithAdmin", (accounts) => {
+contract("BasicController", (accounts) => {
   var basicController;
   var testReg;
   var user1;
