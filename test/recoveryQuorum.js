@@ -97,6 +97,9 @@ contract("RecoveryQuorum", (accounts) => {
       return basicController.userKey.call();
     }).then((userKey) => {
       assert.equal(userKey, user2, "User key in controller should have been updated.");
+      return recoveryQuorum.creator.call();
+    }).then((creator) => {
+      assert.equal(creator, user2, "Creator in recovery quorum should have been updated.");
       done();
     }).catch(done);
   });

@@ -3,7 +3,7 @@ import "BasicController.sol";
 contract RecoveryQuorum {
 
     BasicController public controller;
-    address creator;
+    address public creator;
     uint public neededSigs;
     mapping(address => bool) public isUser;
 
@@ -45,6 +45,7 @@ contract RecoveryQuorum {
             collectedSigs = 0;
 
             controller.updateUserKey(newUserKey);
+            creator = newUserKey;
         }
     }
 
