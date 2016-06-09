@@ -1,4 +1,4 @@
-import "Proxy";
+import "Proxy.sol";
 
 contract OwnerWithAdmin {
 
@@ -14,7 +14,7 @@ contract OwnerWithAdmin {
     adminKey = _adminKey;
   }
 
-  function sendTx(address destination, uint value, bytes data) only(userKey) {
+  function forward(address destination, uint value, bytes data) only(userKey) {
     proxy.forward(destination, value, data);
   }
 

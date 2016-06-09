@@ -6,4 +6,8 @@ contract TestRegistry {
     registry[msg.sender] = x;
   }
 
+  function testThrow() {
+      throw;
+  }
+
 }
