@@ -97,9 +97,20 @@ contract("RecoveryQuorum", (accounts) => {
       return basicController.userKey.call();
     }).then((userKey) => {
       assert.equal(userKey, user2, "User key in controller should have been updated.");
-      return recoveryQuorum.creator.call();
-    }).then((creator) => {
-      assert.equal(creator, user2, "Creator in recovery quorum should have been updated.");
+      done();
+    }).catch(done);
+  });
+
+  it("Only controller user can add user to quorum", (done) => {
+    recoveryQuorum.addUser(accounts[7], {from: user1}).then(() => {
+      return recoveryQuorum.isUser(accounts[7]);
+    }).then((isUser) => {
+      assert.isFalse(isUser, "Random user should not be able to add aditional users to quorum.");
+      return recoveryQuorum.addUser(accounts[7], {from: user2})
+    }).then(() => {
+      return recoveryQuorum.isUser(accounts[7]);
+    }).then((isUser) => {
+      assert.isTrue(isUser, "Controller userKey should be able to add aditional users to quorum.");
       done();
     }).catch(done);
   });
