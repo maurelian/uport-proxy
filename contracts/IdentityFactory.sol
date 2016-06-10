@@ -1,5 +1,5 @@
 import "Proxy.sol";
-import "OwnerWithAdmin.sol";
+import "BasicController.sol";
 
 contract IdentityFactory {
     event IdentityCreated(
@@ -12,7 +12,7 @@ contract IdentityFactory {
 
     function CreateProxyWithController(address userKey, address adminKey) {
         Proxy proxy = new Proxy();
-        OwnerWithAdmin controller = new OwnerWithAdmin(proxy, userKey, adminKey);
+        BasicController controller = new BasicController(proxy, userKey, adminKey);
         proxy.transfer(controller);
 
         IdentityCreated(msg.sender, proxy, controller);

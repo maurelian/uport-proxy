@@ -4,8 +4,8 @@ contract("IdentityFactory", (accounts) => {
   var identityFactory;
   var proxy;
   var deployedProxy;
-  var ownerWithAdmin;
-  var deployedOwnerWithAdmin;
+  var basicController;
+  var deployedBasicController;
   var testReg;
   var user1;
   var user2;
@@ -15,7 +15,7 @@ contract("IdentityFactory", (accounts) => {
     // Truffle deploys contracts with accounts[0]
     identityFactory = IdentityFactory.deployed();
     deployedProxy = Proxy.deployed();
-    deployedOwnerWithAdmin = OwnerWithAdmin.deployed();
+    deployedBasicController = BasicController.deployed();
     user1 = accounts[0];
     user2 = accounts[1];
     admin = accounts[2];
@@ -29,10 +29,10 @@ contract("IdentityFactory", (accounts) => {
                    web3.eth.getCode(deployedProxy.address),
                    "Created proxy should have correct code");
       assert.equal(web3.eth.getCode(result.args.controller),
-                   web3.eth.getCode(deployedOwnerWithAdmin.address),
+                   web3.eth.getCode(deployedBasicController.address),
                    "Created controller should have correct code");
       proxy = Proxy.at(result.args.proxy);
-      ownerWithAdmin = OwnerWithAdmin.at(result.args.controller);
+      basicController = BasicController.at(result.args.controller);
       // Check that the mapping has correct proxy address
       identityFactory.senderToProxy.call(user2).then((createdProxyAddress) => {
         assert(createdProxyAddress, proxy.address, "Mapping should have the same address as event");
@@ -44,18 +44,18 @@ contract("IdentityFactory", (accounts) => {
 
   it("Created proxy should have correct state", (done) => {
     proxy.owner.call().then((createdControllerAddress) => {
-      assert.equal(createdControllerAddress, ownerWithAdmin.address);
+      assert.equal(createdControllerAddress, basicController.address);
       done();
     }).catch(done);
   });
 
   it("Created controller should have correct state", (done) => {
-    ownerWithAdmin.proxy().then((proxyAddress) => {
+    basicController.proxy().then((proxyAddress) => {
       assert.equal(proxyAddress, proxy.address);
-      return ownerWithAdmin.userKey();
+      return basicController.userKey();
     }).then((userKey) => {
       assert.equal(userKey, user1);
-      return ownerWithAdmin.adminKey();
+      return basicController.adminKey();
     }).then((adminKey) => {
       assert.equal(adminKey, admin);
       done();

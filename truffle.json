@@ -13,8 +13,9 @@
       "TestRegistry",
       "Proxy",
       "Owned",
-      "OwnerWithAdmin",
-      "IdentityFactory"
+      "BasicController",
+      "IdentityFactory",
+      "RecoveryQuorum"
   ],
   "rpc": {
     "host": "localhost",
