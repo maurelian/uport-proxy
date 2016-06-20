@@ -1,4 +1,4 @@
-var lightwallet = require('eth-lightwallet');
+var lightwallet = require('eth-signer');
 
 const LOG_NUMBER_1 = 1234;
 const LOG_NUMBER_2 = 2345;
@@ -25,7 +25,7 @@ contract("Proxy", (accounts) => {
     }).catch(done);
   });
 
-  it("Non-owner can't send trasaction", (done) => {
+  it("Non-owner can't send transaction", (done) => {
     // Encode the transaction to send to the proxy contract
     var data = lightwallet.txutils._encodeFunctionTxData('register', ['uint256'], [LOG_NUMBER_2]);
     // Send forward request from a non-owner

@@ -1,5 +1,5 @@
 var HookedWeb3Provider = require('hooked-web3-provider');
-var lightwallet = require('eth-lightwallet');
+var lightwallet = require('eth-signer');
 
 var Signer = lightwallet.signer;
 var HDSigner = lightwallet.signers.HDSigner;

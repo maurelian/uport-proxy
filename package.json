@@ -25,7 +25,7 @@
     "ether-pudding" : "*",
     "bluebird" : "*",
     "web3" : "*",
-    "eth-lightwallet" : "pelle/eth-lightwallet#vault-and-signer",
+    "eth-signer" : "0.1.2",
     "babelify": "*",
     "babel-preset-es2015": "*",
     "hooked-web3-provider" : "*",

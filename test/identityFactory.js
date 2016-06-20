@@ -1,4 +1,4 @@
-var lightwallet = require('eth-lightwallet');
+var lightwallet = require('eth-signer');
 
 contract("IdentityFactory", (accounts) => {
   var identityFactory;
