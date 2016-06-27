@@ -5,6 +5,12 @@
 import "Owned.sol";
 
 contract Proxy is Owned {
+    event Forwarded (
+        address indexed destination,
+        uint value,
+        bytes data
+    );
+
     function forward(address destination, uint value, bytes data) onlyOwner {
     	// If a contract tries to CALL or CREATE a contract with either
     	// (i) insufficient balance, or (ii) stack depth already at maximum (1024),
@@ -13,5 +19,6 @@ contract Proxy is Owned {
         if (!destination.call.value(value)(data)) {
             throw;
         }
+        Forwarded(destination, value, data);
     }
 }
