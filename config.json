@@ -12,7 +12,7 @@
     "ipfsHost": "104.236.65.136",
     "ipfsPort": "5001",
     "ipfsWebPort": "8080",
-    "IdentityFactory": "0x0b6949ea6dbfd1d122afb67a08b310329e12b67d"
+    "IdentityFactory": "0xc7f508093f7c8a04d3a21dd23dc359f74b1bf5cb"
   },
   "local": {
     "web3Host": "localhost",
