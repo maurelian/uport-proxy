@@ -25,6 +25,21 @@ contract("Proxy", (accounts) => {
     }).catch(done);
   });
 
+  it("Event works correctly", (done) => {
+    // Encode the transaction to send to the proxy contract
+    var data = '0x' + lightwallet.txutils._encodeFunctionTxData('register', ['uint256'], [LOG_NUMBER_1]);
+    // Send forward request from the owner
+    var event = proxy.Forwarded();
+    event.watch((error, result) => {
+      //console.log(result)
+      assert.equal(result.args.destination, testReg.address);
+      assert.equal(result.args.value, 0);
+      assert.equal(result.args.data, data);
+      done();
+    });
+    proxy.forward(testReg.address, 0, data, {from: accounts[0]});
+  });
+
   it("Non-owner can't send transaction", (done) => {
     // Encode the transaction to send to the proxy contract
     var data = lightwallet.txutils._encodeFunctionTxData('register', ['uint256'], [LOG_NUMBER_2]);
