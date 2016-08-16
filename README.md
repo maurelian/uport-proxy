@@ -58,7 +58,7 @@ var controller = ownerwithadminContract.at(controllerAddress);
 ```
 
 ## Testing
-Tests are run using truffle
+Tests are run using truffle. Have testrpc running first. Then:
 ```
 $ truffle test
 ```
