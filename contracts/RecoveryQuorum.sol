@@ -1,80 +1,88 @@
-import "BasicController.sol";
+import "RecoverableController.sol";
 
 contract RecoveryQuorum {
+    RecoverableController public controller;
 
-    BasicController public controller;
-    uint public neededSigs;
-    mapping(address => bool) public isUser;
+    address[] public delegateAddresses; // needed for iteration
+    mapping (address => Delegate) public delegates;
+    struct Delegate{
+        bool isInit;
+        uint deletedAfter;
+        uint pendingUntil;
+        address proposedUserKey;
+    }
 
-    // Temporary variables
-    uint public collectedSigs;
-    uint public multisigTimeInterval;
-    uint public signingId;
-    mapping(uint => mapping(address => bool)) public hasSigned;
+    event RecoveryEvent(string action, address initiatedBy);
 
-    address public pendingNewUserKey;
+    modifier onlyUserKey(){ if (msg.sender == controller.userKey()) _}
 
-    modifier onlyControllerUser { if (msg.sender == controller.userKey()) _}
-    modifier onlyUser { if (isUser[msg.sender]) _}
-
-    function RecoveryQuorum(address controllerAddress, address[] users, uint _neededSigs) {
-        controller = BasicController(controllerAddress);
-        neededSigs = _neededSigs;
-
-        for (uint i = 0; i < users.length; i++) {
-            isUser[users[i]] = true;
+    function RecoveryQuorum(address _controller, address[] _delegates){
+        controller = RecoverableController(_controller);
+        for (uint i = 0; i < _delegates.length; i++){
+            delegateAddresses.push(_delegates[i]);
+            delegates[_delegates[i]] = Delegate({isInit: true, proposedUserKey: 0x0, pendingUntil: 0, deletedAfter: 31536000000000});
+        }
+    }
+    function signUserChange(address proposedUserKey) {
+        if (delegateRecordExists(delegates[msg.sender])) {
+            delegates[msg.sender].proposedUserKey = proposedUserKey;
+            changeUserKey(proposedUserKey);
+            RecoveryEvent("signUserChange", msg.sender);
+        }
+    }
+    function changeUserKey(address newUserKey) {
+        if (collectedSignatures(newUserKey) >= neededSignatures()){
+            controller.changeUserKeyFromRecovery(newUserKey);
+            for(uint i = 0 ; i < delegateAddresses.length ; i++){
+                if (delegates[delegateAddresses[i]].pendingUntil > now){ 
+                    delegates[delegateAddresses[i]].deletedAfter = now;
+                }
+                delete delegates[delegateAddresses[i]].proposedUserKey;
+            }
+        }
+    }
+    function replaceDelegates(address[] delegatesToRemove, address[] delegatesToAdd){
+        for(uint i = 0 ; i < delegatesToRemove.length ; i++){
+            removeDelegate(delegatesToRemove[i]);
+        }
+        for(uint j = 0 ; j < delegatesToAdd.length ; j++){
+            addDelegate(delegatesToAdd[j]);
+        }
+        RecoveryEvent("replaceDelegates", msg.sender);
+    }
+    function collectedSignatures(address _proposedUserKey) returns (uint signatures){
+        for(uint i = 0 ; i < delegateAddresses.length ; i++){
+            if (delegateHasValidSignature(delegates[delegateAddresses[i]]) && delegates[delegateAddresses[i]].proposedUserKey == _proposedUserKey){
+                signatures++;
+            }
         }
     }
 
-    function recoverControllerUser(address newUserKey) onlyUser {
-        if (pendingNewUserKey == 0) {
-            signingId++;
-            pendingNewUserKey = newUserKey;
-            collectedSigs++;
-            hasSigned[signingId][msg.sender] = true;
-        }
-        else if (pendingNewUserKey == newUserKey &&
-                 !hasSigned[signingId][msg.sender]) {
-            collectedSigs++;
-            hasSigned[signingId][msg.sender] = true;
-        }
-
-        if (collectedSigs >= neededSigs) {
-            pendingNewUserKey = 0;
-            collectedSigs = 0;
-
-            controller.updateUserKey(newUserKey);
+    function addDelegate(address delegate) private onlyUserKey {
+        if (!delegates[delegate].isInit && delegateAddresses.length <= 100) {
+            delegates[delegate] = Delegate({isInit: true, proposedUserKey: 0x0, pendingUntil: now + controller.longTimeLock(), deletedAfter: 31536000000000});
+            delegateAddresses.push(delegate);
         }
     }
-
-    function addUser(address newUser) onlyControllerUser {
-        // WARNING - this function should be implemented with a timelock.
-        // The RecoveryQuorum is considered unsafe until that is done.
-        isUser[newUser] = true;
+    function removeDelegate(address delegate) private onlyUserKey {
+        if (delegateRecordExists(delegates[delegate])){ 
+            delegates[delegate].deletedAfter = controller.longTimeLock() + now;
+        }
     }
-
-    function removeUser(address newUser) onlyControllerUser {
-        // WARNING - this function should be implemented with a timelock.
-        // The RecoveryQuorum is considered unsafe until that is done.
-        isUser[newUser] = false;
+    function neededSignatures() private returns (uint){
+        uint currentDelegateCount; //always 0 at this point
+        for(uint i = 0 ; i < delegateAddresses.length ; i++){
+            if(delegateIsCurrent(delegates[delegateAddresses[i]])){ currentDelegateCount++; }
+        }
+        return currentDelegateCount/2 + 1;
     }
-
-    function replaceUser(address newUser, address oldUser) onlyControllerUser {
-        // WARNING - this function should be implemented with a timelock.
-        // The RecoveryQuorum is considered unsafe until that is done.
-        addUser(newUser);
-        removeUser(oldUser);
+    function delegateRecordExists(Delegate d) private returns (bool){
+        return d.deletedAfter > now;
     }
-
-    function updateControllerAdmin(address newAdminKey) onlyControllerUser {
-        // WARNING - this function should be implemented with a timelock.
-        // The RecoveryQuorum is considered unsafe until that is done.
-        // This function could basically be seen as a way to update the RecoveryQuorum.
-        controller.updateAdminKey(newAdminKey);
+    function delegateIsCurrent(Delegate d) private returns (bool){
+        return delegateRecordExists(d) && now > d.pendingUntil;
     }
-
-    function upgradeController(address newController) onlyControllerUser {
-        // TODO - This might be a good place to initiate an upgrade of the controller
-        // However it should be done with a timelock initiated by the creator.
+    function delegateHasValidSignature(Delegate d) private returns (bool){
+        return delegateIsCurrent(d) && d.proposedUserKey != 0x0;
     }
 }

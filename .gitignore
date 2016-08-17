@@ -4,3 +4,4 @@ environments/development/
 *.bin
 *.abi
 *.log
+notes.txt
