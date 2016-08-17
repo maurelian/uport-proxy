@@ -49,6 +49,8 @@ contract("Uport proxy integration tests", (accounts) => {
     });
     web3.setProvider(web3Prov);
     // Truffle deploys contracts with accounts[0]
+    IdentityFactory.setProvider(web3Prov);
+    TestRegistry.setProvider(web3Prov);
     identityFactory = IdentityFactory.deployed();
     testReg = TestRegistry.deployed();
   });
