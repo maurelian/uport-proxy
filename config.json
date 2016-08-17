@@ -1,25 +1,22 @@
 {
   "mainnet": {
-    "web3Host": "frontier-lb.ether.camp",
-    "web3Port": "80",
-    "ipfsHost": "104.131.53.68",
-    "ipfsPort": "5001",
-    "ipfsWebPort": "8080"
-  },
-  "consensys_testnet": {
-    "web3Host": "104.236.65.136",
+    "web3Host": "mainnet.infura.io",
     "web3Port": "8545",
-    "ipfsHost": "104.236.65.136",
-    "ipfsPort": "5001",
-    "ipfsWebPort": "8080",
+    "web3Protocol": "https",
+    "IdentityFactory": "0x0"
+  },
+  "consensysNet": {
+    "web3Host": "consensysnet.infura.io",
+    "web3Port": "8545",
+    "web3Protocol": "https",
     "IdentityFactory": "0xc7f508093f7c8a04d3a21dd23dc359f74b1bf5cb"
   },
   "local": {
     "web3Host": "localhost",
     "web3Port": "8545",
-    "ipfsHost": "localhost",
-    "ipfsPort": "5001",
-    "ipfsWebPort": "8080"
+    "web3Protocol": "http",
+    "IdentityFactory": "0x0"
   },
-  "selection": "consensys_testnet"
+  "selection": "consensysNet",
+  "walletSeed": "tackle crystal drum type spin nest wine occur humor grocery worry pottery"
 }

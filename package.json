@@ -26,6 +26,7 @@
     "bluebird" : "*",
     "web3" : "*",
     "eth-signer" : "0.1.2",
+    "eth-lightwallet" : "*",
     "babelify": "*",
     "babel-preset-es2015": "*",
     "hooked-web3-provider" : "*",
