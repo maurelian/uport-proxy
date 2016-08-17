@@ -32,7 +32,7 @@ The IdentityFactory creates a proxy contract with an associated controller. When
 The IdentityFactory is deployed on the ConsenSys testnet at the address
 
 ```
-0xc7f508093f7c8a04d3a21dd23dc359f74b1bf5cb
+0xebe809bb9c515914f41e16cf500a15d31869c1e8
 ```
 
 ### Example usage
