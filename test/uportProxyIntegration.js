@@ -77,7 +77,7 @@ contract("Uport proxy integration tests", (accounts) => {
       host: 'http://localhost:8545',
       transaction_signer: proxySigner
     });
-    web3.setProvider(web3ProxyProvider);
+    TestRegistry.setProvider(web3ProxyProvider);
 
     // Register a number from proxy.address
     testReg.register(LOG_NUMBER_1, {from: proxy.address}).then(() => {
@@ -101,11 +101,16 @@ contract("Uport proxy integration tests", (accounts) => {
         host: 'http://localhost:8545',
         transaction_signer: proxySigner
       });
-      web3.setProvider(web3ProxyProvider);
+      TestRegistry.setProvider(web3ProxyProvider);
       // Register a number from proxy.address
+      return recoverableController.userKey.call()
+    }).then((newUserKey) => {
+      assert.equal(newUserKey, user2, "User key of recoverableController should have been updated.");
       return testReg.register(LOG_NUMBER_2, {from: proxy.address})
     }).then(() => {
-
+      return testReg.registry.call(proxy.address);
+    }).then((regData) => {
+      assert.equal(regData.toNumber(), LOG_NUMBER_2);
       done();
     }).catch(done);
   });
