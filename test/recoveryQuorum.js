@@ -144,8 +144,6 @@ contract("RecoveryQuorum", (accounts) => {
       assert.equal(collectedSigs.toNumber(), 0, "collected sigs should get reset after changeUserKey")
       return recoverableController.userKey.call();
     }).then((userKey) => {
-      return recoverableController.userKey.call();
-    }).then((userKey) => {
       assert.equal(userKey, user2, "User key in controller should have been updated.");
       return recoveryQuorum.delegates.call(user1);
     }).then((delegate) => {
@@ -155,13 +153,13 @@ contract("RecoveryQuorum", (accounts) => {
       assert.equal(delegate[delegateProposedUserKey], 0x0, "Signatures should reset after a user key recovery");
       return recoveryQuorum.delegates.call(delegateList[0]);
     }).then((delegate) => {
-      assert.equal(delegate[delegateProposedUserKey], 0x0, "Signatures should reset after a user key recovery");      
+      assert.equal(delegate[delegateProposedUserKey], 0x0, "Signatures should reset after a user key recovery");
       return recoveryQuorum.delegates.call(delegateList[1]);
     }).then((delegate) => {
-      assert.equal(delegate[delegateProposedUserKey], 0x0, "Signatures should reset after a user key recovery");      
+      assert.equal(delegate[delegateProposedUserKey], 0x0, "Signatures should reset after a user key recovery");
       return recoveryQuorum.collectedSignatures.call(user2);
     }).then((collectedSignatures) => {
-      assert.equal(collectedSignatures, 0, "Signatures should have reset after a user key recovery");      
+      assert.equal(collectedSignatures, 0, "Signatures should have reset after a user key recovery");
       done();
     }).catch(done);
   });
