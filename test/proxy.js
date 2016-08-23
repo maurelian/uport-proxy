@@ -31,6 +31,7 @@ contract("Proxy", (accounts) => {
     // Send forward request from the owner
     var event = proxy.Forwarded();
     event.watch((error, result) => {
+      event.stopWatching()
       //console.log(result)
       assert.equal(result.args.destination, testReg.address);
       assert.equal(result.args.value, 0);
