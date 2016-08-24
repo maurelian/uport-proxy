@@ -45,8 +45,8 @@ contract("Uport proxy integration tests", (accounts) => {
         accounts[1],
         accounts[2]
     ];
-    web3.eth.sendTransaction({from: admin, to: user1, value: web3.toWei(1000)});
-    web3.eth.sendTransaction({from: admin, to: user2, value: web3.toWei(1000)});
+    web3.eth.sendTransaction({from: admin, to: user1, value: web3.toWei('1', 'ether')});
+    web3.eth.sendTransaction({from: admin, to: user2, value: web3.toWei('1', 'ether')});
 
     var web3Prov = new HookedWeb3Provider({
       host: 'http://localhost:8545',
