@@ -1,3 +1,4 @@
+var HookedWeb3Provider = require('hooked-web3-provider');
 var lightwallet = require('eth-signer');
 
 function wait(seconds){
@@ -21,10 +22,9 @@ contract("IdentityFactory", (accounts) => {
   var recoverableControllerAddress;
   var recoveryQuorumAddress;
 
-  var delegateIsInit =          0;
-  var delegateDeletedAfter =    1;
-  var delegatePendingUntil =    2;
-  var delegateProposedUserKey = 3;
+  var delegateDeletedAfter =    0;
+  var delegatePendingUntil =    1;
+  var delegateProposedUserKey = 2;
 
   var shortTimeLock = 2;
   var longTimeLock = 7;
@@ -48,32 +48,6 @@ contract("IdentityFactory", (accounts) => {
     delegate5 = accounts[8];
     delegate6 = accounts[9];
 
-  });
-
-  it("Correctly creates proxy and controller contracts", (done) => {
-    var event = identityFactory.IdentityCreated({creator: nobody})
-    event.watch((error, result) => {
-      event.stopWatching();
-      // Check that event has addresses to correct contracts
-      proxyAddress = result.args.proxy;
-      recoverableControllerAddress = result.args.controller;
-      recoverUserAddress = result.args.recoveryQuorum;
-
-      assert.equal(web3.eth.getCode(proxyAddress),
-                   web3.eth.getCode(deployedProxy.address),
-                   "Created proxy should have correct code");
-      assert.equal(web3.eth.getCode(recoverableControllerAddress),
-                   web3.eth.getCode(deployedRecoverableController.address),
-                   "Created controller should have correct code");
-      proxy = Proxy.at(proxyAddress);
-      recoverableController = RecoverableController.at(result.args.controller);
-      // Check that the mapping has correct proxy address
-      identityFactory.senderToProxy.call(nobody).then((createdProxyAddress) => {
-        assert(createdProxyAddress, proxy.address, "Mapping should have the same address as event");
-        done();
-      }).catch(done);
-    });
-    identityFactory.CreateProxyWithController(user1, recoveryUser2, longTimeLock, shortTimeLock, {from: nobody})
   });
 
   it("Correctly creates proxy, controller, and recovery contracts", (done) => {
@@ -132,7 +106,6 @@ contract("IdentityFactory", (accounts) => {
       proxy = Proxy.at(result.args['proxy']);
       controller = RecoverableController.at(result.args['controller']);
       quorum = RecoveryQuorum.at(result.args['recoveryQuorum']);
-
       quorum.signUserChange(recoveryUser2, {from: user1}).then(() => {
         return controller.userKey();
       }).then((userKey) => {
@@ -180,9 +153,10 @@ contract("IdentityFactory", (accounts) => {
         done();
       }).catch(done);
     })
+
     identityFactory.CreateProxyWithControllerAndRecovery(
       user1,//userKey
-      [delegate1],//delegates
+      [delegate1, delegate3],//delegates
       longTimeLock, 
       shortTimeLock, 
       {from: nobody}
@@ -196,7 +170,6 @@ contract("IdentityFactory", (accounts) => {
       proxy = Proxy.at(result.args['proxy']);
       controller = RecoverableController.at(result.args['controller']);
       quorum = RecoveryQuorum.at(result.args['recoveryQuorum']);
-
       quorum.replaceDelegates([], [delegate5, delegate6], {from: user1}).then(() => {})
       .then(() => {return quorum.signUserChange(recoveryUser2, {from:delegate5})})//pending
       .then(() => {return quorum.signUserChange(recoveryUser2, {from:delegate6})})//pending

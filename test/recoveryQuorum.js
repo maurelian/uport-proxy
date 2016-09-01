@@ -1,9 +1,13 @@
+var HookedWeb3Provider = require('hooked-web3-provider');
 var lightwallet = require('eth-signer');
 
 const LOG_NUMBER_1 = 1234;
 const LOG_NUMBER_2 = 2345;
 
 contract("RecoveryQuorum", (accounts) => {
+  var userSigner;
+  var proxySigner;
+
   var recoverableController;
   var recoveryQuorum;
   var user1;
@@ -11,18 +15,15 @@ contract("RecoveryQuorum", (accounts) => {
   var recovery1;
   var delegateList;
 
-  var delegateIsInit =          0;
-  var delegateDeletedAfter =    1;
-  var delegatePendingUntil =    2;
-  var delegateProposedUserKey = 3;
+  var delegateDeletedAfter =    0;
+  var delegatePendingUntil =    1;
+  var delegateProposedUserKey = 2;
 
   var shortTimeLock = 2;
   var longTimeLock  = 5;
 
   before(() => {
-    // Truffle deploys contracts with accounts[0]
     proxy = Proxy.deployed();
-    testReg = TestRegistry.deployed();
     user1 = accounts[0];
     user2 = accounts[1];
     recovery1 = accounts[2];
@@ -32,12 +33,30 @@ contract("RecoveryQuorum", (accounts) => {
       accounts[5],
       accounts[6]
     ];
+    fifteenDelegates = [
+      accounts[2],
+      accounts[3],
+      accounts[4],
+      accounts[5],
+      accounts[6],
+      accounts[7],
+      accounts[8],
+      accounts[9],
+      accounts[10],
+      accounts[11],
+      accounts[12],
+      accounts[13],
+      accounts[14],
+      accounts[15],
+    ];
   });
 
   it("Correctly deploys contract", (done) => {
     RecoverableController.new(proxy.address, user1, longTimeLock, shortTimeLock, {from: recovery1})
     .then((newRC) => {
       recoverableController = newRC;
+      return proxy.transfer(recoverableController.address, {from: accounts[0]});
+    }).then(() => {
       return RecoveryQuorum.new(recoverableController.address, delegateList);
     }).then((newRQ) => {
       recoveryQuorum = newRQ;
@@ -52,36 +71,32 @@ contract("RecoveryQuorum", (accounts) => {
       return recoveryQuorum.controller();
     }).then((controllerAddress) => {
       assert.equal(controllerAddress, recoverableController.address);
-      // return recoveryQuorum.neededSigs();
-    // }).then((neededSigs) => {
-      // assert.equal(neededSigs, 2);
       return recoveryQuorum.delegates.call(delegateList[0]);
     }).then((delegate) => {
-      assert.isTrue(delegate[delegateIsInit]);
+      assert.isAbove(delegate[delegateDeletedAfter].toNumber(), 0);
       return recoveryQuorum.delegates.call(delegateList[1]);
     }).then((delegate) => {
-      assert.isTrue(delegate[delegateIsInit]);
+      assert.isAbove(delegate[delegateDeletedAfter].toNumber(), 0);
       return recoveryQuorum.delegates.call(delegateList[2]);
     }).then((delegate) => {
-      assert.isTrue(delegate[delegateIsInit]);
+      assert.isAbove(delegate[delegateDeletedAfter].toNumber(), 0);
       return recoveryQuorum.delegates.call(delegateList[3]);
     }).then((delegate) => {
-      assert.isTrue(delegate[delegateIsInit]);
       assert.equal(delegate[delegateProposedUserKey], 0x0);
       assert.equal(delegate[delegatePendingUntil].toNumber(), 0);
       assert.isAtLeast(delegate[delegateDeletedAfter].toNumber(), 31536000000000);//million years
       return recoveryQuorum.delegates.call(user1);
     }).then((delegate) => {
-      assert.isFalse(delegate[delegateIsInit]);
+      assert.equal(delegate[delegateDeletedAfter].toNumber(), 0);
       return recoveryQuorum.delegates.call(user2);
     }).then((delegate) => {
-      assert.isFalse(delegate[delegateIsInit]);
+      assert.equal(delegate[delegateDeletedAfter].toNumber(), 0);
       return recoveryQuorum.delegates.call(recovery1);
     }).then((delegate) => {
-      assert.isFalse(delegate[delegateIsInit]);
+      assert.equal(delegate[delegateDeletedAfter].toNumber(), 0);
       return recoveryQuorum.delegates.call(0x0);
     }).then((delegate) => {
-      assert.isFalse(delegate[delegateIsInit]);
+      assert.equal(delegate[delegateDeletedAfter].toNumber(), 0);
       done();
     }).catch(done);
   });
@@ -141,7 +156,7 @@ contract("RecoveryQuorum", (accounts) => {
     }).then(() => {
       return recoveryQuorum.collectedSignatures.call(user2);
     }).then((collectedSigs) => {
-      assert.equal(collectedSigs.toNumber(), 0, "collected sigs should get reset after changeUserKey")
+      assert.equal(collectedSigs.toNumber(), 0, "collected sigs should e reset after changeUserKey")
       return recoverableController.userKey.call();
     }).then((userKey) => {
       assert.equal(userKey, user2, "User key in controller should have been updated.");
@@ -157,6 +172,9 @@ contract("RecoveryQuorum", (accounts) => {
       return recoveryQuorum.delegates.call(delegateList[1]);
     }).then((delegate) => {
       assert.equal(delegate[delegateProposedUserKey], 0x0, "Signatures should reset after a user key recovery");
+      return recoveryQuorum.getAddresses.call();})
+    .then((addys) => {
+      assert.equal(addys.length, 4);
       return recoveryQuorum.collectedSignatures.call(user2);
     }).then((collectedSignatures) => {
       assert.equal(collectedSignatures, 0, "Signatures should have reset after a user key recovery");
@@ -165,22 +183,43 @@ contract("RecoveryQuorum", (accounts) => {
   });
 
   it("Only controller user can add delegates to quorum", (done) => {
-    recoveryQuorum.replaceDelegates([], [accounts[7]], {from: user1})
+
+    web3.eth.sendTransaction({from: accounts[0], to: user2, value: web3.toWei('10', 'ether')});
+    Proxy.new({from: accounts[0]})
+    .then((newPX) => {
+      proxy = newPX;
+      return RecoverableController.new(proxy.address, user2, longTimeLock, shortTimeLock, {from: recovery1})})
+    .then((newRC) => {
+      recoverableController = newRC;
+      return proxy.transfer(recoverableController.address, {from: accounts[0]});
+    }).then(() => {
+      return RecoveryQuorum.new(recoverableController.address, delegateList);
+    }).then((newRQ) => {
+      recoveryQuorum = newRQ;
+      return recoverableController.changeRecoveryFromRecovery(recoveryQuorum.address, {from: recovery1});
+    }).then(() => {
+      return recoveryQuorum.replaceDelegates([], [accounts[7]], {from: user1})})
     .then(() => {
+      return recoveryQuorum.delegateAddresses.call(0);})
+    .then((addys) => {
+      return recoveryQuorum.getAddresses.call();})
+    .then((addys) => {
       return recoveryQuorum.delegates.call(accounts[7]);
     }).then((delegate) => {
-      assert.isFalse(delegate[delegateIsInit], "Random user should not be able to add additional delegates to quorum.");
+      assert.equal(delegate[delegateDeletedAfter].toNumber(), 0, "Random user should not be able to add additional delegates to quorum.");
+      return recoveryQuorum.getAddresses();})
+    .then((addys) => {
       return recoveryQuorum.replaceDelegates([], [accounts[7]], {from: user2})
     }).then(() => {
       return recoveryQuorum.delegates.call(accounts[7]);
     }).then((delegate) => {
-      assert.isTrue(delegate[delegateIsInit], "Controller userKey should be able to add additional delegates to quorum.");
+      assert.isAbove(delegate[delegateDeletedAfter].toNumber(), 0, "Controller userKey should be able to add additional delegates to quorum.");
       assert.approximately(delegate[delegatePendingUntil].toNumber(), Date.now()/1000 + longTimeLock, 5);
       return recoveryQuorum.signUserChange(0x123, {from: delegateList[1]});
     }).then(() => {
       return recoveryQuorum.delegates.call(delegateList[1]);
     }).then((delegate) => {
-      assert.isTrue(delegate[delegateIsInit], "This delegate exists from contract creation");
+      assert.isAbove(delegate[delegateDeletedAfter].toNumber(), 0, "This delegate exists from contract creation");
       assert.equal(delegate[delegateProposedUserKey], 0x0123);
       assert.equal(delegate[delegatePendingUntil].toNumber(), 0);
       assert.isAtLeast(delegate[delegateDeletedAfter].toNumber(), 31536000000000, "inits to 1million years");
@@ -188,7 +227,7 @@ contract("RecoveryQuorum", (accounts) => {
     }).then(() => {
       return recoveryQuorum.delegates.call(delegateList[1]);
     }).then((delegate) => {
-      assert.isTrue(delegate[delegateIsInit], "Trying to add existing delegate should affect nothing");
+      assert.isAbove(delegate[delegateDeletedAfter].toNumber(), 0, "Trying to add existing delegate should affect nothing");
       assert.equal(delegate[delegateProposedUserKey], 0x0123, "Trying to add existing delegate should affect nothing");
       assert.equal(delegate[delegatePendingUntil].toNumber(), 0, "Trying to add existing delegate should affect nothing");
       assert.isAtLeast(delegate[delegateDeletedAfter].toNumber(), 31536000000000, "Trying to add existing delegate should affect nothing");
@@ -201,12 +240,12 @@ contract("RecoveryQuorum", (accounts) => {
     .then(() => {
       return recoveryQuorum.delegates.call(accounts[8]);
     }).then((delegate) => {
-      assert.isTrue(delegate[delegateIsInit], "New delegate should have been added by user");
+      assert.isAbove(delegate[delegateDeletedAfter].toNumber(), 0, "New delegate should have been added by user");
       assert.equal(delegate[delegateProposedUserKey], 0x0);
       assert.approximately(delegate[delegatePendingUntil].toNumber(), Date.now()/1000 + longTimeLock, 5);
       return recoveryQuorum.delegates.call(accounts[7]);
     }).then((delegate) =>{
-      assert.isTrue(delegate[delegateIsInit], "New delegate should have been added by user");
+      assert.isAbove(delegate[delegateDeletedAfter].toNumber(), 0, "New delegate should have been added by user");
       assert.equal(delegate[delegateProposedUserKey], 0x0);
       assert.approximately(delegate[delegatePendingUntil].toNumber(), Date.now()/1000 + longTimeLock, 5);
       return recoveryQuorum.collectedSignatures.call(user2)
@@ -221,7 +260,7 @@ contract("RecoveryQuorum", (accounts) => {
       assert.equal(collectedSignatures, 0, "Newly added delegates should not be able to add valid signature yet");
       return recoveryQuorum.delegates.call(accounts[7]);
     }).then((delegate) => {
-      assert.equal(delegate[delegateProposedUserKey], user1,                                           "Proposed user should be set");
+      assert.equal(delegate[delegateProposedUserKey], user1, "Proposed user should be set");
       assert.approximately(delegate[delegatePendingUntil].toNumber(), Date.now()/1000 + longTimeLock, 5, "But it should be locked (doesn't count yet)");
       return recoveryQuorum.changeUserKey(user1, {from: accounts[7]});
     }).then(() => {
@@ -231,4 +270,146 @@ contract("RecoveryQuorum", (accounts) => {
       done();
     }).catch(done);
   });
+
+ // THE FOLLOWING TESTS REQUIRE 25 ACCOUNTS: `testrpc --accounts 25`
+ //=================================================================
+ 
+ // it("protected against gasLimit attack. WARNING: strange error if gas is overspent", (done) => {
+ //   Proxy.new({from: accounts[0]})
+ //    .then((newPX) => {
+ //      proxy = newPX;
+ //      return RecoverableController.new(proxy.address, user2, 100000, 100000, {from: recovery1})})
+ //    .then((newRC) => {
+ //      recoverableController = newRC;
+ //      return proxy.transfer(recoverableController.address, {from: accounts[0]});
+ //    }).then(() => {
+ //      return RecoveryQuorum.new(recoverableController.address, [accounts[1]]);//only 1 delegate
+ //    }).then((newRQ) => {
+ //      recoveryQuorum = newRQ;
+ //      return recoverableController.changeRecoveryFromRecovery(recoveryQuorum.address, {from: recovery1});
+ //    }).then(() => {
+ //      return recoveryQuorum.replaceDelegates([accounts[1]], fifteenDelegates, {from: user2})//add 14 more
+ //    }).then(() => {
+ //      return recoveryQuorum.replaceDelegates([], [accounts[16]], {from: user2})//try adding 16th delegate
+ //    }).then(() => {
+ //      return recoveryQuorum.signUserChange(0x123, {from: accounts[2]});//add a vote or each $
+ //    }).then(() => {
+ //      return recoveryQuorum.signUserChange(0x123, {from: accounts[3]});
+ //    }).then(() => {
+ //      return recoveryQuorum.signUserChange(0x123, {from: accounts[4]});
+ //    }).then(() => {
+ //      return recoveryQuorum.signUserChange(0x123, {from: accounts[5]});
+ //    }).then(() => {
+ //      return recoveryQuorum.signUserChange(0x123, {from: accounts[6]});
+ //    }).then(() => {
+ //      return recoveryQuorum.signUserChange(0x123, {from: accounts[7]});
+ //    }).then(() => {
+ //      return recoveryQuorum.signUserChange(0x123, {from: accounts[8]});
+ //    }).then(() => {
+ //      return recoveryQuorum.signUserChange(0x123, {from: accounts[9]});
+ //    }).then(() => {
+ //      return recoveryQuorum.signUserChange(0x123, {from: accounts[10]});
+ //    }).then(() => {
+ //      return recoveryQuorum.signUserChange(0x123, {from: accounts[11]});
+ //    }).then(() => {
+ //      return recoveryQuorum.signUserChange(0x123, {from: accounts[12]});
+ //    }).then(() => {
+ //      return recoveryQuorum.signUserChange(0x123, {from: accounts[13]});
+ //    }).then(() => {
+ //      return recoveryQuorum.signUserChange(0x123, {from: accounts[14]});
+ //    }).then(() => {
+ //      return recoveryQuorum.signUserChange(0x123, {from: accounts[15]});
+ //    }).then(() => {
+ //      return recoveryQuorum.delegates.call(accounts[1]);
+ //    }).then((delegate) => {
+ //      assert.isAbove(delegate[delegateDeletedAfter].toNumber(), 0); //check state for OG delegate
+ //      assert.equal(delegate[delegateProposedUserKey], 0x0);
+ //      assert.equal(delegate[delegatePendingUntil].toNumber(), 0);
+ //      assert.isAtLeast(delegate[delegateDeletedAfter].toNumber(), Date.now()/1000);//million years
+ //      return recoveryQuorum.getAddresses()
+ //    }).then((addys) => {
+ //      assert.equal(addys.length, 15, "only first 15 delegates made it in");
+ //      return recoveryQuorum.delegates.call(accounts[2]);
+ //    }).then((delegate) => {
+ //      assert.isAbove(delegate[delegateDeletedAfter].toNumber(), 0); //check state for a pending
+ //      assert.equal(delegate[delegateProposedUserKey], 0x123);
+ //      assert.isAtLeast(delegate[delegatePendingUntil].toNumber(),Date.now()/1000 + 10000);
+ //      assert.equal(delegate[delegateDeletedAfter].toNumber(), 31536000000000);//million years
+ //      return recoveryQuorum.delegates.call(accounts[16]);
+ //    }).then((delegate) => {
+ //      assert.equal(delegate[delegateDeletedAfter].toNumber(), 0); //16th delegate shouldn't exist cause we are full
+ //      assert.equal(delegate[delegateProposedUserKey], 0x0);
+ //      return recoveryQuorum.signUserChange(0x123, {from: accounts[1], gas: 1000000});
+ //    }).then(() => {
+ //      return recoverableController.userKey();
+ //    }).then((userKey) => {
+ //      assert.equal(userKey, 0x123, "enough gas was present to recover");
+ //      done();
+ //    }).catch(done);
+ //  });
+
+ //  it("protected against gasLimit attack. WARNING: strange error if gas is overspent", (done) => {
+ //   Proxy.new({from: accounts[0]})
+ //    .then((newPX) => {
+ //      proxy = newPX;    
+ //      return RecoverableController.new(proxy.address, user2, 0, 0, {from: recovery1})})
+ //    .then((newRC) => {
+ //      recoverableController = newRC;
+ //      return proxy.transfer(recoverableController.address, {from: accounts[0]});
+ //    }).then(() => {
+ //      fifteenDelegates.push(accounts[1]);
+ //      return RecoveryQuorum.new(recoverableController.address, fifteenDelegates);//full 15 delegates
+ //    }).then((newRQ) => {
+ //      recoveryQuorum = newRQ;
+ //      return recoverableController.changeRecoveryFromRecovery(recoveryQuorum.address, {from: recovery1});
+ //    }).then(() => {
+ //      return recoveryQuorum.signUserChange(0x111, {from: accounts[1]});
+ //    }).then(() => {
+ //      return recoveryQuorum.signUserChange(0x222, {from: accounts[2]});
+ //    }).then(() => {
+ //      return recoveryQuorum.signUserChange(0x333, {from: accounts[3]});
+ //    }).then(() => {
+ //      return recoveryQuorum.signUserChange(0x444, {from: accounts[4]});
+ //    }).then(() => {
+ //      return recoveryQuorum.signUserChange(0x555, {from: accounts[5]});
+ //    }).then(() => {
+ //      return recoveryQuorum.signUserChange(0x666, {from: accounts[6]});
+ //    }).then(() => {
+ //      return recoveryQuorum.signUserChange(0x777, {from: accounts[7]});
+ //    }).then(() => {
+ //      return recoveryQuorum.signUserChange(0x456, {from: accounts[8]});
+ //    }).then(() => {
+ //      return recoveryQuorum.signUserChange(0x456, {from: accounts[9]});
+ //    }).then(() => {
+ //      return recoveryQuorum.signUserChange(0x456, {from: accounts[10]});
+ //    }).then(() => {
+ //      return recoveryQuorum.signUserChange(0x456, {from: accounts[11]});
+ //    }).then(() => {
+ //      return recoveryQuorum.signUserChange(0x456, {from: accounts[12]});
+ //    }).then(() => {
+ //      return recoveryQuorum.signUserChange(0x456, {from: accounts[13]});
+ //    }).then(() => {
+ //      return recoveryQuorum.signUserChange(0x456, {from: accounts[14]});
+ //    }).then(() => {
+ //      return recoveryQuorum.getAddresses()
+ //    }).then((addys) => {
+ //      assert.equal(addys.length, 15, "15 delegates from contract creation");
+ //      return recoveryQuorum.delegates.call(accounts[1])
+ //    }).then((delegate) => {
+ //      assert.isAbove(delegate[delegateDeletedAfter].toNumber(), 0); //correct state for OG delegates
+ //      assert.equal(delegate[delegateProposedUserKey], 0x111);
+ //      assert.equal(delegate[delegatePendingUntil].toNumber(), 0);
+ //      assert.isAtLeast(delegate[delegateDeletedAfter].toNumber(), Date.now()/1000);//million years
+ //      return recoveryQuorum.delegates.call(accounts[16]);
+ //    }).then((delegate) => {
+ //      assert.equal(delegate[delegateDeletedAfter].toNumber(), 0); //16th delegate shouldn't exist cause we are full
+ //      assert.equal(delegate[delegateProposedUserKey], 0x0);
+ //      return recoveryQuorum.signUserChange(0x456, {from: accounts[15], gas: 1000000});
+ //    }).then(() => {
+ //      return recoverableController.userKey();
+ //    }).then((userKey) => {
+ //      assert.equal(userKey, 0x456, "enough gas was present to recover");
+ //      done();
+ //    }).catch(done);
+ //  });
 });

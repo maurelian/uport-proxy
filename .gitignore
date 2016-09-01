@@ -5,3 +5,4 @@ environments/development/
 *.abi
 *.log
 notes.txt
+build/

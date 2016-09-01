@@ -58,7 +58,7 @@ var controller = ownerwithadminContract.at(controllerAddress);
 ```
 
 ## Testing
-Tests are run using truffle. Have testrpc running first. Then:
-```
-$ truffle test
-```
+Tests are run using truffles framework.
+-install [truffle](https://github.com/ConsenSys/truffle) and [testrpc](https://github.com/ethereumjs/testrpc)
+-Have `testrpc` running in background 
+-Then: `$ truffle test`

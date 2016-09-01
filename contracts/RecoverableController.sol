@@ -16,7 +16,7 @@ contract RecoverableController {
     uint    public proposedControllerPendingUntil;
 
     uint    public shortTimeLock;// use 900 for 15 minutes
-    uint    public longTimeLock; // use 604800 for 1 week
+    uint    public longTimeLock; // use 259200 for 3 days
 
     event RecoveryEvent(string action, address initiatedBy);
 
@@ -35,7 +35,7 @@ contract RecoverableController {
     function forward(address destination, uint value, bytes data) onlyUserKey {
         proxy.forward(destination, value, data);
     }
-
+    //pass 0x0 to cancel 
     function signRecoveryChange(address _proposedRecoveryKey) onlyUserKey{
         proposedRecoveryKeyPendingUntil = now + longTimeLock;
         proposedRecoveryKey = _proposedRecoveryKey;
@@ -47,7 +47,7 @@ contract RecoverableController {
             delete proposedRecoveryKey;
         }
     }
-
+    //pass 0x0 to cancel 
     function signControllerChange(address _proposedController) onlyUserKey{
         proposedControllerPendingUntil = now + longTimeLock;
         proposedController = _proposedController;
@@ -59,7 +59,7 @@ contract RecoverableController {
             suicide(proposedController);
         }
     }
-
+    //pass 0x0 to cancel 
     function signUserKeyChange(address _proposedUserKey) onlyUserKey{
         proposedUserKeyPendingUntil = now + shortTimeLock;
         proposedUserKey = _proposedUserKey;

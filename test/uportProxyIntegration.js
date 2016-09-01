@@ -19,10 +19,9 @@ contract("Uport proxy integration tests", (accounts) => {
   var recoverableController;
   var recoveryQuorum;
 
-  var delegateIsInit =          0;
-  var delegateDeletedAfter =    1;
-  var delegatePendingUntil =    2;
-  var delegateProposedUserKey = 3;
+  var delegateDeletedAfter =    0;
+  var delegatePendingUntil =    1;
+  var delegateProposedUserKey = 2;
 
   var proxySigner;
   var user1Signer;
@@ -99,10 +98,10 @@ contract("Uport proxy integration tests", (accounts) => {
     .then(() => {
       return recoveryQuorum.delegates.call(delegates[0]);})
     .then((delegate1) => {
-      assert.equal(delegate1[delegateIsInit], true, "this delegate should have record in quorum"); 
+      assert.isAbove(delegate1[delegateDeletedAfter], 0, "this delegate should have record in quorum"); 
       return recoveryQuorum.delegates.call("0xdeadbeef");})
     .then((notADelegate) => {
-      assert.equal(notADelegate[delegateIsInit], false, "this delegate should not have a record in quorum");
+      assert.equal(notADelegate[delegateDeletedAfter], 0, "this delegate should not have a record in quorum");
       return recoveryQuorum.delegateAddresses(1);})
     .then((delegate1Address) => {
       assert.equal(delegate1Address, delegates[1], "this delegate should also be in the delegateAddresses array in quorum");
