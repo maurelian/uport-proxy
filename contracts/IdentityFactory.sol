@@ -9,6 +9,7 @@ contract IdentityFactory {
 
     mapping(address => address) public senderToProxy;
 
+    //cost ~2.4M gas
     function CreateProxyWithControllerAndRecovery(address userKey, address[] delegates, uint longTimeLock, uint shortTimeLock) {
         Proxy proxy = new Proxy();
         RecoverableController controller = new RecoverableController(proxy, userKey, longTimeLock, shortTimeLock);
@@ -19,16 +20,4 @@ contract IdentityFactory {
         IdentityCreated(msg.sender, proxy, controller, recoveryQuorum);
         senderToProxy[msg.sender] = proxy;
     }
-
-    function CreateProxyWithController(address userKey, address recoveryKey, uint longTimeLock, uint shortTimeLock) {
-        Proxy proxy = new Proxy();
-        RecoverableController controller = new RecoverableController(proxy, userKey, longTimeLock, shortTimeLock);
-        proxy.transfer(controller);
-        controller.changeRecoveryFromRecovery(recoveryKey);
-
-        IdentityCreated(msg.sender, proxy, controller, recoveryKey);
-        senderToProxy[msg.sender] = proxy;
-    }
 }
-
-

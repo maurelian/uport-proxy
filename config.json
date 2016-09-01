@@ -9,7 +9,7 @@
     "web3Host": "consensysnet.infura.io",
     "web3Port": "8545",
     "web3Protocol": "https",
-    "IdentityFactory": "0xebe809bb9c515914f41e16cf500a15d31869c1e8"
+    "IdentityFactory": "0x78f5c1722911da0717aa19098c4299a3956b1e1a"
   },
   "local": {
     "web3Host": "localhost",
