@@ -1,3 +1,4 @@
+pragma solidity ^0.4.4;
 import "RecoverableController.sol";
 
 contract RecoveryQuorum {
@@ -13,7 +14,7 @@ contract RecoveryQuorum {
 
     event RecoveryEvent(string action, address initiatedBy);
 
-    modifier onlyUserKey(){ if (msg.sender == controller.userKey()) _}
+    modifier onlyUserKey(){ if (msg.sender == controller.userKey()) _; }
 
     function RecoveryQuorum(address _controller, address[] _delegates){
         controller = RecoverableController(_controller);

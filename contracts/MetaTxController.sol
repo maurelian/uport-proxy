@@ -1,5 +1,5 @@
+pragma solidity ^0.4.4;
 import "Proxy.sol";
-
 contract MetaTxController {
 
   Proxy public proxy;
@@ -7,7 +7,7 @@ contract MetaTxController {
   address public adminKey;
   uint public referenceNonce;
 
-  modifier only(address key) { if (msg.sender == key) _}
+  modifier only(address key) { if (msg.sender == key) _;}
 
   function MetaTxController(address proxyAddress, address _userKey, address _adminKey) {
     proxy = Proxy(proxyAddress);

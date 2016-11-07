@@ -1,3 +1,4 @@
+pragma solidity ^0.4.4;
 import "Proxy.sol";
 
 contract RecoverableController {
@@ -20,8 +21,8 @@ contract RecoverableController {
 
     event RecoveryEvent(string action, address initiatedBy);
 
-    modifier onlyUserKey() { if (msg.sender == userKey) _}
-    modifier onlyRecoveryKey() { if (msg.sender == recoveryKey) _}
+    modifier onlyUserKey() { if (msg.sender == userKey) _; }
+    modifier onlyRecoveryKey() { if (msg.sender == recoveryKey) _; }
 
     function RecoverableController(address proxyAddress, address _userKey, uint _longTimeLock, uint _shortTimeLock) {
         version = 1;

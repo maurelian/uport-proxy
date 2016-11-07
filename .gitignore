@@ -6,3 +6,4 @@ environments/development/
 *.log
 notes.txt
 build/
+.DS_Store
