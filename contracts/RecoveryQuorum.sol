@@ -1,5 +1,6 @@
 pragma solidity ^0.4.4;
 import "RecoverableController.sol";
+import "Lib1.sol";
 
 contract RecoveryQuorum {
     RecoverableController public controller;
@@ -47,6 +48,7 @@ contract RecoveryQuorum {
         for(uint i = 0 ; i < delegatesToRemove.length ; i++){
             removeDelegate(delegatesToRemove[i]);
         }
+        garbageCollect();
         for(uint j = 0 ; j < delegatesToAdd.length ; j++){
             addDelegate(delegatesToAdd[j]);
         }
@@ -85,11 +87,25 @@ contract RecoveryQuorum {
             }
         }
     }
+    function garbageCollect() private{
+        uint i = 0;
+        while(i < delegateAddresses.length){
+            if(delegateIsDeleted(delegates[delegateAddresses[i]])){
+                delegates[delegateAddresses[i]].deletedAfter = 0;
+                delegates[delegateAddresses[i]].pendingUntil = 0;
+                delegates[delegateAddresses[i]].proposedUserKey = 0;
+                Lib1.removeAddress(i, delegateAddresses);
+            }else{i++;}
+        }
+    }
     function delegateRecordExists(Delegate d) private returns (bool){
         return d.deletedAfter != 0;
     }
+    function delegateIsDeleted(Delegate d) private returns (bool){
+        return delegateRecordExists(d) && d.deletedAfter <= now;
+    }
     function delegateIsCurrent(Delegate d) private returns (bool){
-        return d.deletedAfter > now && now > d.pendingUntil;
+        return delegateRecordExists(d) && !delegateIsDeleted(d) && now > d.pendingUntil;
     }
     function delegateHasValidSignature(Delegate d) private returns (bool){
         return delegateIsCurrent(d) && d.proposedUserKey != 0x0;
