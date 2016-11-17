@@ -102,7 +102,7 @@ contract RecoveryQuorum {
         return d.deletedAfter != 0;
     }
     function delegateIsDeleted(Delegate d) private returns (bool){
-        return delegateRecordExists(d) && d.deletedAfter <= now;
+        return d.deletedAfter <= now; //doesnt check record existence
     }
     function delegateIsCurrent(Delegate d) private returns (bool){
         return delegateRecordExists(d) && !delegateIsDeleted(d) && now > d.pendingUntil;
