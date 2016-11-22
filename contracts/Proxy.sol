@@ -1,7 +1,7 @@
 // The core proxy facade
 // - is owned by a user or implementation contract
 // - only forwards transactions for its owner
-
+pragma solidity ^0.4.4;
 import "Owned.sol";
 
 contract Proxy is Owned {
