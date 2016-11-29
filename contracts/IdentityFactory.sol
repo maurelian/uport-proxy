@@ -3,7 +3,7 @@ import "RecoveryQuorum.sol";
 
 contract IdentityFactory {
     event IdentityCreated(
-        address indexed creator,
+        address indexed userKey,
         address proxy,
         address controller,
         address recoveryQuorum);
@@ -18,7 +18,7 @@ contract IdentityFactory {
         RecoveryQuorum recoveryQuorum = new RecoveryQuorum(controller, delegates);
         controller.changeRecoveryFromRecovery(recoveryQuorum);
 
-        IdentityCreated(msg.sender, proxy, controller, recoveryQuorum);
+        IdentityCreated(userKey, proxy, controller, recoveryQuorum);
         senderToProxy[msg.sender] = proxy;
     }
 }
