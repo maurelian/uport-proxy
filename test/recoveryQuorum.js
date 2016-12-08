@@ -334,11 +334,11 @@ contract("RecoveryQuorum", (accounts) => {
       return recoveryQuorum.getAddresses();
     }).then((delegateAddresses) => {
       assert.deepEqual(delegateAddresses, [], "pending delegates are deleted immediately")
-      return recoveryQuorum.replaceDelegates([], [delegateList[0]], {from: user2})//trigger garbageCollection and add one delegate
+      return recoveryQuorum.replaceDelegates([], largeDelegateList, {from: user2})//add lots of new delegates
     }).then(() => {
       return recoveryQuorum.getAddresses();
     }).then((delegateAddresses) => {
-      assert.deepEqual(delegateAddresses, [delegateList[0]], "old delegates are gone, and the new one is present")
+      assert.deepEqual(delegateAddresses, largeDelegateList, "old delegates are gone, and the new ones are present")
       done();
     }).catch(done);
   });
