@@ -4,6 +4,12 @@ var lightwallet = require('eth-signer');
 const LOG_NUMBER_1 = 1234;
 const LOG_NUMBER_2 = 2345;
 
+function wait(seconds){
+  return new Promise(function(resolve, reject){
+    setTimeout(resolve, seconds*1000);
+  })
+}
+
 contract("RecoveryQuorum", (accounts) => {
   var userSigner;
   var proxySigner;
@@ -33,7 +39,7 @@ contract("RecoveryQuorum", (accounts) => {
       accounts[5],
       accounts[6]
     ];
-    fifteenDelegates = [
+    largeDelegateList = [
       accounts[2],
       accounts[3],
       accounts[4],
@@ -183,7 +189,6 @@ contract("RecoveryQuorum", (accounts) => {
   });
 
   it("Only controller user can add delegates to quorum", (done) => {
-
     web3.eth.sendTransaction({from: accounts[0], to: user2, value: web3.toWei('10', 'ether')});
     Proxy.new({from: accounts[0]})
     .then((newPX) => {
@@ -231,6 +236,22 @@ contract("RecoveryQuorum", (accounts) => {
       assert.equal(delegate[delegateProposedUserKey], 0x0123, "Trying to add existing delegate should affect nothing");
       assert.equal(delegate[delegatePendingUntil].toNumber(), 0, "Trying to add existing delegate should affect nothing");
       assert.isAtLeast(delegate[delegateDeletedAfter].toNumber(), 31536000000000, "Trying to add existing delegate should affect nothing");
+      return recoveryQuorum.replaceDelegates([accounts[3],accounts[4]], [], {from: user2})
+    }).then(() => {
+      return wait(6)
+    }).then(() => {
+      return recoveryQuorum.replaceDelegates([], [accounts[4]], {from: user2})
+    }).then(() => {
+      return recoveryQuorum.getAddresses.call();
+    }).then((delegateAddresses) => {
+      assert.deepEqual(delegateAddresses, [accounts[7],accounts[6],accounts[5],accounts[4]])
+      return recoveryQuorum.replaceDelegates([], [accounts[3]], {from: user2})
+    }).then(() => {
+      return wait(6)
+    }).then(() => {
+      return recoveryQuorum.getAddresses.call();
+    }).then((delegateAddresses) => {
+      assert.deepEqual(delegateAddresses, [accounts[7],accounts[6],accounts[5],accounts[4],accounts[3]])
       done();
     }).catch(done);
   });
@@ -247,21 +268,19 @@ contract("RecoveryQuorum", (accounts) => {
     }).then((delegate) =>{
       assert.isAbove(delegate[delegateDeletedAfter].toNumber(), 0, "New delegate should have been added by user");
       assert.equal(delegate[delegateProposedUserKey], 0x0);
-      assert.approximately(delegate[delegatePendingUntil].toNumber(), Date.now()/1000 + longTimeLock, 5);
       return recoveryQuorum.collectedSignatures.call(user2)
     }).then((collectedSignatures) => {
       assert.equal(collectedSignatures, 0, "Signatures should have reset after a user key recovery");
-      return recoveryQuorum.signUserChange(user1, {from: accounts[7]});
-    }).then(() => {
       return recoveryQuorum.signUserChange(user1, {from: accounts[8]});
     }).then(() => {
       return recoveryQuorum.collectedSignatures.call(user1)
     }).then((collectedSignatures) => {
       assert.equal(collectedSignatures, 0, "Newly added delegates should not be able to add valid signature yet");
+      return recoveryQuorum.signUserChange(user1, {from: accounts[7]});
+    }).then(() => {
       return recoveryQuorum.delegates.call(accounts[7]);
     }).then((delegate) => {
       assert.equal(delegate[delegateProposedUserKey], user1, "Proposed user should be set");
-      assert.approximately(delegate[delegatePendingUntil].toNumber(), Date.now()/1000 + longTimeLock, 5, "But it should be locked (doesn't count yet)");
       return recoveryQuorum.changeUserKey(user1, {from: accounts[7]});
     }).then(() => {
       return recoverableController.userKey.call();
@@ -270,6 +289,61 @@ contract("RecoveryQuorum", (accounts) => {
       done();
     }).catch(done);
   });
+
+  it("Allows you to remove a delegate, and add them back many times", (done) => {
+    Proxy.new({from: accounts[0]})
+    .then((newPX) => {
+      proxy = newPX;
+      return RecoverableController.new(proxy.address, user2, shortTimeLock , longTimeLock, {from: recovery1})})
+    .then((newRC) => {
+      recoverableController = newRC;
+      return proxy.transfer(recoverableController.address, {from: accounts[0]});
+    }).then(() => {
+      return RecoveryQuorum.new(recoverableController.address, delegateList);//init with delegates
+    }).then((newRQ) => {
+      recoveryQuorum = newRQ;
+      return recoverableController.changeRecoveryFromRecovery(recoveryQuorum.address, {from: recovery1});
+    }).then(() => {
+      return recoveryQuorum.getAddresses();
+    }).then((delegateAddresses) => {
+      assert.deepEqual(delegateAddresses, delegateList, "starts with delegates")
+      return recoveryQuorum.replaceDelegates(delegateList, [], {from: user2})//remove them all
+    }).then(() => {
+      return recoveryQuorum.getAddresses();
+    }).then((delegateAddresses) => {
+      assert.deepEqual(delegateAddresses, delegateList, "current delegates are still there, but deletion pending")
+      return wait(6)
+    }).then(() => {
+      return recoveryQuorum.replaceDelegates([], [], {from: user2})//trigger garbageCollection
+    }).then(() => {
+      return recoveryQuorum.getAddresses();
+    }).then((delegateAddresses) => {
+      assert.deepEqual(delegateAddresses, [], "after waiting and garbageCollection they are gone")
+      return recoveryQuorum.replaceDelegates([], delegateList, {from: user2})//add them back
+    }).then(() => {
+      return recoveryQuorum.getAddresses();
+    }).then((delegateAddresses) => {
+      assert.deepEqual(delegateAddresses, delegateList, "immediately they are back")
+      return recoveryQuorum.replaceDelegates([], delegateList, {from: user2})//try to add them twice
+    }).then(() => {
+      return recoveryQuorum.getAddresses();
+    }).then((delegateAddresses) => {
+      assert.deepEqual(delegateAddresses, delegateList, "doubling up should change nothing")
+      return recoveryQuorum.replaceDelegates(delegateList, [], {from: user2})//remove them all again
+    }).then(() => {
+      return recoveryQuorum.getAddresses();
+    }).then((delegateAddresses) => {
+      assert.deepEqual(delegateAddresses, [], "pending delegates are deleted immediately")
+      return recoveryQuorum.replaceDelegates([], [delegateList[0]], {from: user2})//trigger garbageCollection and add one delegate
+    }).then(() => {
+      return recoveryQuorum.getAddresses();
+    }).then((delegateAddresses) => {
+      assert.deepEqual(delegateAddresses, [delegateList[0]], "old delegates are gone, and the new one is present")
+      done();
+    }).catch(done);
+  });
+
+
 
  // THE FOLLOWING TESTS REQUIRE 25 ACCOUNTS: `testrpc --accounts 25`
  //=================================================================
@@ -288,7 +362,7 @@ contract("RecoveryQuorum", (accounts) => {
  //      recoveryQuorum = newRQ;
  //      return recoverableController.changeRecoveryFromRecovery(recoveryQuorum.address, {from: recovery1});
  //    }).then(() => {
- //      return recoveryQuorum.replaceDelegates([accounts[1]], fifteenDelegates, {from: user2})//add 14 more
+ //      return recoveryQuorum.replaceDelegates([accounts[1]], largeDelegateList, {from: user2})//add 14 more
  //    }).then(() => {
  //      return recoveryQuorum.replaceDelegates([], [accounts[16]], {from: user2})//try adding 16th delegate
  //    }).then(() => {
@@ -357,8 +431,8 @@ contract("RecoveryQuorum", (accounts) => {
  //      recoverableController = newRC;
  //      return proxy.transfer(recoverableController.address, {from: accounts[0]});
  //    }).then(() => {
- //      fifteenDelegates.push(accounts[1]);
- //      return RecoveryQuorum.new(recoverableController.address, fifteenDelegates);//full 15 delegates
+ //      largeDelegateList.push(accounts[1]);
+ //      return RecoveryQuorum.new(recoverableController.address, largeDelegateList);//full 15 delegates
  //    }).then((newRQ) => {
  //      recoveryQuorum = newRQ;
  //      return recoverableController.changeRecoveryFromRecovery(recoveryQuorum.address, {from: recovery1});
