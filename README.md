@@ -29,10 +29,10 @@ The IdentityFactory creates a proxy contract with an associated controller. When
 
 ### Deployed contract
 
-The IdentityFactory is deployed on the ConsenSys testnet at the address
+The IdentityFactory is [deployed on the Ropsten testnet](https://ropsten.io/address/0xfbc47af22a82669ea90c7edd68cb6caea0a5c908) at the address
 
 ```
-0xebe809bb9c515914f41e16cf500a15d31869c1e8
+0xfbc47af22a82669ea90c7edd68cb6caea0a5c908
 ```
 
 ### Example usage
@@ -58,7 +58,14 @@ var controller = ownerwithadminContract.at(controllerAddress);
 ```
 
 ## Testing
-Tests are run using truffles framework.
--install [truffle](https://github.com/ConsenSys/truffle) and [testrpc](https://github.com/ethereumjs/testrpc)
--Have `testrpc` running in background 
--Then: `$ truffle test`
+Tests are run using the `truffle` framework.
+
+*Important:* You need to run `testrpc` with at least 25 accounts for the tests to succeed:
+
+```
+testrpc --accounts 25
+```
+
+* install [truffle](https://github.com/ConsenSys/truffle) and [testrpc](https://github.com/ethereumjs/testrpc)
+* Have `testrpc` running in background 
+* Then: `$ truffle test`
