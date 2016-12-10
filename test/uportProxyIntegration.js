@@ -12,6 +12,10 @@ const SEED2 = 'tree clock fly receive mirror scissors away avoid seminar attract
 const LOG_NUMBER_1 = 1234;
 const LOG_NUMBER_2 = 2345;
 
+const PROXY_GAS_OVERHEAD = 7723;
+var gasUsedWithProxy;
+var gasUsedWithoutProxy;
+
 contract("Uport proxy integration tests", (accounts) => {
   var identityFactory;
   var testReg;
@@ -56,7 +60,9 @@ contract("Uport proxy integration tests", (accounts) => {
     IdentityFactory.setProvider(web3Prov);
     TestRegistry.setProvider(web3Prov);
     identityFactory = IdentityFactory.deployed();
-    testReg = TestRegistry.deployed();
+    TestRegistry.new({from: accounts[0]}).then(tr => {
+      testReg = tr;
+    })
   });
 
   it("Create proxy, controller, and recovery contracts", (done) => {
@@ -82,8 +88,9 @@ contract("Uport proxy integration tests", (accounts) => {
     TestRegistry.setProvider(web3ProxyProvider);
 
     // Register a number from proxy.address
-    testReg.register(LOG_NUMBER_1, {from: proxy.address}).then(() => {
+    testReg.register(LOG_NUMBER_1, {from: proxy.address}).then((txHash) => {
       // Verify that the proxy address is logged
+      web3.eth.getTransactionReceipt(txHash, function(err, receiptProxy){gasUsedWithProxy = receiptProxy.cumulativeGasUsed})
       return testReg.registry.call(proxy.address);
     }).then((regData) => {
       assert.equal(regData.toNumber(), LOG_NUMBER_1);
@@ -125,4 +132,25 @@ contract("Uport proxy integration tests", (accounts) => {
       done();
     }).catch(done);
   });
+
+
+  it("Measures gas used by controller + proxy", (done) => {
+    // Set up the Proxy provider
+
+    var testReg2
+    var web3Prov = new web3.providers.HttpProvider("http://localhost:8545")
+    TestRegistry.setProvider(web3Prov);
+    // Register a number from proxy.address
+    TestRegistry.new({from: accounts[0]}).then((tr => {
+      testReg2 = tr
+      return testReg2.register(LOG_NUMBER_1, {from: accounts[0]})
+    })).then((txHash) => {
+      web3.eth.getTransactionReceipt(txHash, function(err, receiptNoProxy){
+        gasUsedWithoutProxy = receiptNoProxy.cumulativeGasUsed;
+        assert.equal(gasUsedWithProxy - gasUsedWithoutProxy, PROXY_GAS_OVERHEAD, "PROXY_GAS_OVERHEAD has unexpected value. Please update this in the test file if value has changed.");
+        done();
+      })
+    }).catch(done);
+  });
+
 });
