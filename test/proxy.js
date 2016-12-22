@@ -1,4 +1,4 @@
-var lightwallet = require('eth-signer');
+require('./helpers.js')()
 
 const LOG_NUMBER_1 = 1234;
 const LOG_NUMBER_2 = 2345;

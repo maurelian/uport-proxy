@@ -1,14 +1,7 @@
-var HookedWeb3Provider = require('hooked-web3-provider');
-var lightwallet = require('eth-signer');
+require('./helpers.js')()
 
 const LOG_NUMBER_1 = 1234;
 const LOG_NUMBER_2 = 2345;
-
-function wait(seconds){
-  return new Promise(function(resolve, reject){
-    setTimeout(resolve, seconds*1000);
-  })
-}
 
 contract("RecoveryQuorum", (accounts) => {
   var userSigner;

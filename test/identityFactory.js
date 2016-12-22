@@ -1,11 +1,4 @@
-var HookedWeb3Provider = require('hooked-web3-provider');
-var lightwallet = require('eth-signer');
-
-function wait(seconds){
-  return new Promise(function(resolve, reject){
-    setTimeout(resolve, seconds*1000);
-  })
-}
+require('./helpers.js')()
 
 contract("IdentityFactory", (accounts) => {
   var identityFactory;
