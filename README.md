@@ -29,10 +29,10 @@ The IdentityFactory creates a proxy contract with an associated controller. When
 
 ### Deployed contract
 
-The IdentityFactory is [deployed on the Ropsten testnet](https://ropsten.io/address/0xfbc47af22a82669ea90c7edd68cb6caea0a5c908) at the address
+The IdentityFactory is [deployed on the Ropsten testnet](https://ropsten.io/address/0xadb4966858672ef5ed70894030526544f9a5acdd) at the address
 
 ```
-0xfbc47af22a82669ea90c7edd68cb6caea0a5c908
+0xadb4966858672ef5ed70894030526544f9a5acdd
 ```
 
 ### Example usage

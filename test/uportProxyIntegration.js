@@ -98,9 +98,36 @@ contract("Uport proxy integration tests", (accounts) => {
     }).catch(done);
   });
 
+  it("Proxy can receive and send Eth", (done) => {
+    var initialProxyBalance = web3.eth.getBalance(proxy.address)/(web3.toWei(1, "ether"))
+    var initialCoinbaseBalance = web3.eth.getBalance(accounts[0])/(web3.toWei(1, "ether"))
+
+    assert.equal(0, initialProxyBalance, "proxy should initially have no value")
+    web3.eth.sendTransaction({from: accounts[0], to: proxy.address, value: web3.toWei('1.5', 'ether')}, function(){
+      var mediumProxyBalance = web3.eth.getBalance(proxy.address)/(web3.toWei(1, "ether"))
+      assert.equal(mediumProxyBalance, 1.5, "then proxy contract should have received 1.5ETH value")
+      var mediumCoinbaseBalance = web3.eth.getBalance(accounts[0])/(web3.toWei(1, "ether"))
+      assert.approximately(mediumCoinbaseBalance, initialCoinbaseBalance - 1.5, .05, "coinbase should have less (1.5ETH value + gas)")
+     
+      proxySigner = new Signer(new ProxySigner(proxy.address, user1Signer, recoverableController.address));
+      var web3ProxyProvider = new HookedWeb3Provider({
+        host: 'http://localhost:8545',
+        transaction_signer: proxySigner
+      });
+
+      web3.setProvider(web3ProxyProvider)
+      web3.eth.sendTransaction({from: proxy.address, to: accounts[0], value: web3.toWei('1.4', 'ether')}, function(){
+        var finalProxyBalance = web3.eth.getBalance(proxy.address)/(web3.toWei(1, "ether"))
+        assert.approximately(finalProxyBalance, .1, .05, "coinbase should have received 1.4ETH value")
+        var finalCoinbaseBalance = web3.eth.getBalance(accounts[0])/(web3.toWei(1, "ether"))
+        assert.approximately(finalCoinbaseBalance, mediumCoinbaseBalance + 1.4, .05, "coinbase should have received 1.4ETH value")
+        done();
+      });
+    });
+  });
+
   it("Do a social recovery and do another function call", (done) => {
     // User regular web3 provider to send from regular accounts
-    web3.setProvider(regularWeb3Provider);
     recoveryQuorum.signUserChange(user2, {from: delegates[0]})
     .then(() => {
       return recoveryQuorum.delegates.call(delegates[0]);})
@@ -147,7 +174,7 @@ contract("Uport proxy integration tests", (accounts) => {
     })).then((txHash) => {
       web3.eth.getTransactionReceipt(txHash, function(err, receiptNoProxy){
         gasUsedWithoutProxy = receiptNoProxy.cumulativeGasUsed;
-        assert.equal(gasUsedWithProxy - gasUsedWithoutProxy, PROXY_GAS_OVERHEAD, "PROXY_GAS_OVERHEAD has unexpected value. Please update this in the test file if value has changed.");
+        assert.approximately(gasUsedWithProxy - gasUsedWithoutProxy, PROXY_GAS_OVERHEAD, 1000, "PROXY_GAS_OVERHEAD has unexpected value. Please update this in the test file if value has changed.");
         done();
       })
     }).catch(done);
