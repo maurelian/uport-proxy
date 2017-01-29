@@ -13,7 +13,7 @@ contract("Proxy", (accounts) => {
     testReg = TestRegistry.deployed();
   });
 
-  it("Owner can send trasaction", (done) => {
+  it("Owner can send transaction", (done) => {
     // Encode the transaction to send to the proxy contract
     var data = lightwallet.txutils._encodeFunctionTxData('register', ['uint256'], [LOG_NUMBER_1]);
     // Send forward request from the owner
@@ -24,6 +24,20 @@ contract("Proxy", (accounts) => {
       done();
     }).catch(done);
   });
+
+  it("Receives transaction", (done) => {
+    var event = proxy.Received();
+    // Encode the transaction to send to the proxy contract
+    event.watch((error, result) => {
+      event.stopWatching()
+      //console.log(result)
+      assert.equal(result.args.sender, accounts[1]);
+      assert.equal(result.args.value, web3.toWei('1', 'ether'));
+      done();
+    });
+    web3.eth.sendTransaction({from: accounts[1], to: proxy.address, value: web3.toWei('1', 'ether')});
+  });
+
 
   it("Event works correctly", (done) => {
     // Encode the transaction to send to the proxy contract
