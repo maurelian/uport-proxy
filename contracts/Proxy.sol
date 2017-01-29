@@ -10,7 +10,15 @@ contract Proxy is Owned {
         uint value,
         bytes data
     );
-    function () payable{}
+    event Received (
+        address indexed sender,
+        uint value
+    );
+
+    function () payable {
+        Received(msg.sender, msg.value);
+    }
+    
     function forward(address destination, uint value, bytes data) onlyOwner {
     	// If a contract tries to CALL or CREATE a contract with either
     	// (i) insufficient balance, or (ii) stack depth already at maximum (1024),
