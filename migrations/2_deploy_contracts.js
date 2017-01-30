@@ -6,4 +6,5 @@ module.exports = function(deployer) {
   deployer.deploy(RecoverableController);
   deployer.deploy(IdentityFactory);
   deployer.deploy(RecoveryQuorum);
+  deployer.deploy(IdentityFactoryWithRecoveryKey);
 };
