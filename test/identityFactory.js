@@ -1,5 +1,10 @@
 require('./helpers.js')()
 
+const IdentityFactory = artifacts.require('IdentityFactory')
+const Proxy = artifacts.require('Proxy')
+const RecoverableController = artifacts.require('RecoverableController')
+const RecoveryQuorum = artifacts.require('RecoveryQuorum')
+
 contract("IdentityFactory", (accounts) => {
   var identityFactory;
   var proxy;
@@ -24,10 +29,6 @@ contract("IdentityFactory", (accounts) => {
 
   before(() => {
     // Truffle deploys contracts with accounts[0]
-    identityFactory = IdentityFactory.deployed();
-    deployedProxy = Proxy.deployed();
-    deployedRecoverableController = RecoverableController.deployed();
-    deployedRecoveryQuorum = RecoveryQuorum.deployed();
     user1 = accounts[0];
     nobody = accounts[1];//has no authority
     recoveryUser1 = accounts[2];
@@ -40,6 +41,18 @@ contract("IdentityFactory", (accounts) => {
 
     delegate5 = accounts[8];
     delegate6 = accounts[9];
+    IdentityFactory.deployed().then((instance) => {
+      identityFactory = instance
+      return Proxy.deployed()
+    }).then((instance) => {
+      deployedProxy = instance
+      return RecoverableController.deployed()
+    }).then((instance) => {
+      deployedRecoverableController = instance
+      return RecoveryQuorum.deployed()
+    }).then((instance) => {
+      deployedRecoveryQuorum = instance
+    })
 
   });
 
@@ -150,8 +163,8 @@ contract("IdentityFactory", (accounts) => {
     identityFactory.CreateProxyWithControllerAndRecovery(
       user1,//userKey
       [delegate1, delegate3],//delegates
-      longTimeLock, 
-      shortTimeLock, 
+      longTimeLock,
+      shortTimeLock,
       {from: nobody}
     );
   });
@@ -226,14 +239,14 @@ contract("IdentityFactory", (accounts) => {
     identityFactory.CreateProxyWithControllerAndRecovery(
       user1,//userKey
       delegates,// #1,2,3, and 4
-      longTimeLock, 
-      shortTimeLock, 
+      longTimeLock,
+      shortTimeLock,
       {from: nobody}
     );
   });
 });
 
-  
+
 
 
 

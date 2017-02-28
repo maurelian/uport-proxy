@@ -1,5 +1,5 @@
 pragma solidity ^0.4.4;
-import "Proxy.sol";
+import "./Proxy.sol";
 contract MetaTxController {
 
   Proxy public proxy;

@@ -1,5 +1,5 @@
 pragma solidity ^0.4.4;
-import "RecoveryQuorum.sol";
+import "./RecoveryQuorum.sol";
 
 contract IdentityFactory {
     event IdentityCreated(

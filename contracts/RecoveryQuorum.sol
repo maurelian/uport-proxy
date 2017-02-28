@@ -1,6 +1,6 @@
 pragma solidity ^0.4.4;
-import "RecoverableController.sol";
-import "Lib1.sol";
+import "./RecoverableController.sol";
+import "./Lib1.sol";
 
 contract RecoveryQuorum {
     RecoverableController public controller;
