@@ -2,7 +2,7 @@
 // - is owned by a user or implementation contract
 // - only forwards transactions for its owner
 pragma solidity ^0.4.4;
-import "Owned.sol";
+import "./Owned.sol";
 
 contract Proxy is Owned {
     event Forwarded (
@@ -18,7 +18,7 @@ contract Proxy is Owned {
     function () payable {
         Received(msg.sender, msg.value);
     }
-    
+
     function forward(address destination, uint value, bytes data) onlyOwner {
     	// If a contract tries to CALL or CREATE a contract with either
     	// (i) insufficient balance, or (ii) stack depth already at maximum (1024),
