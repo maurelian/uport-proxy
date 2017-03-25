@@ -2,9 +2,8 @@
 // - is owned by a user or implementation contract
 // - only forwards transactions for its owner
 pragma solidity ^0.4.4;
-import "./Owned.sol";
 
-contract Proxy is Owned {
+contract Proxy {
     event Forwarded (
         address indexed destination,
         uint value,
@@ -28,5 +27,19 @@ contract Proxy is Owned {
             throw;
         }
         Forwarded(destination, value, data);
+    }
+
+    address public owner;
+    modifier onlyOwner(){ if (isOwner(msg.sender)) _; }
+    modifier ifOwner(address sender) { if(isOwner(sender)) _; }
+
+    function Proxy(){
+        owner = msg.sender;
+    }
+    
+    function isOwner(address addr) public returns(bool) { return addr == owner; }
+
+    function transfer(address _owner) onlyOwner {
+        owner = _owner;
     }
 }
