@@ -1,0 +1,3 @@
+[submodule "solcover"]
+	path = solcover
+	url = http://github.com/JoinColony/solcover.git
