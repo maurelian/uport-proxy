@@ -30,9 +30,10 @@ For each file, the following error and warning counts were found:
 
 ## RecoveryQuorum.sol
 
-11 errors, 13 warnings found.
+28 errors, 30 warnings found.
 
 ## RecoverableController.sol
 
-28 errors, 30 warnings found.
+11 errors, 13 warnings found.
+
 
