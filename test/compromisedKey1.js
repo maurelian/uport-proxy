@@ -1,8 +1,8 @@
 require('./helpers.js')()
 
 /*
-  We start from the IdentityFactory tests as it creates a complete system
-
+  A test exploring the timeline of an attacker who gains access to the userKey.
+  The steps are outlined in the unit test descriptions.
  */
 
 const IdentityFactory = artifacts.require('IdentityFactory')
@@ -64,7 +64,7 @@ contract("IdentityFactory", (accounts) => {
 
   });
 
-  it("Correctly creates proxy, controller, and recovery contracts", (done) => {
+  it("First the setup, we create proxy, controller, and recovery quorum contracts", (done) => {
     // This code is taken right from the identityFactory.js tests
     var event = identityFactory.IdentityCreated({creator: nobody})
     event.watch((error, result) => {
@@ -100,29 +100,51 @@ contract("IdentityFactory", (accounts) => {
 
 
   describe("Now then, what's the worst that can happen if an attacker gets access to our user key?", () =>{
-      // first fund the proxy
-      before( () => {
-        // A generous donation is made to the proxy account!
-        web3.eth.sendTransaction({from:proxyDonor, to:proxyAddress, value:web3.toWei(0.42, 'ether')});
-        // create an alias to represent that the key is compromised. 
-        const compromisedUserKey = user1;
-      });
+    // first fund the proxy
+    before( () => {
+      // A generous donation is made to the proxy account!
+      web3.eth.sendTransaction({from:proxyDonor, to:proxyAddress, value:web3.toWei(0.42, 'ether')});
+      // create an alias to represent that the key is compromised. 
+      const compromisedUserKey = user1;
+    });
 
-      it("Can immediately steal all the Ether funds held by the proxy", (done) => {
-        // verify proxy has funds beforehand
-        const proxyBalanceBefore = web3.eth.getBalance(proxyAddress);
-        // get prior balance of attackers account
-        const attackersBalanceBefore = web3.eth.getBalance(attackersOwnAddress);
-        assert.ok( proxyBalanceBefore > 0, proxyBalanceBefore);  
-        debugger;
-        recoverableController.forward(attackersOwnAddress, 0.42, '0x0', {from: user1}).then((result) => {
-          const proxyBalanceAfter = web3.eth.getBalance(proxyAddress);
-          const stolenFunds = web3.eth.getBalance(attackersOwnAddress) - attackersBalanceBefore;
-          debugger;
-          assert.ok(proxyBalanceAfter == 0); // empty balance
-          assert.ok(stolenFunds == 0.42, stolenFunds); // attacker has the funds
-          done();
-        }).catch(done);
-      })   
+    it("First, the attacker can immediately steal all the Ether funds held by the proxy", (done) => {
+      // verify proxy has funds beforehand
+      const proxyBalanceBefore = web3.eth.getBalance(proxyAddress);
+      // get prior balance of attackers account
+      const attackersBalanceBefore = web3.eth.getBalance(attackersOwnAddress);
+      assert.ok( proxyBalanceBefore > 0, proxyBalanceBefore);  
+      recoverableController.forward(attackersOwnAddress, web3.toWei(0.42, 'ether'), '', {from: user1}).then((result) => {
+        const proxyBalanceAfter = web3.eth.getBalance(proxyAddress);
+        const stolenFunds = web3.eth.getBalance(attackersOwnAddress) - attackersBalanceBefore;
+        assert.ok(proxyBalanceAfter == 0); // empty balance
+        assert.ok(stolenFunds == web3.toWei(0.42, 'ether'), stolenFunds); // attacker has the funds
+        done();
+      }).catch(done);
+    })   
+
+    it("Next, the attacker can propose a new userKey", (done) => {
+      recoverableController.signUserKeyChange(attackersOwnAddress, {from: user1}).then((result) => {
+        assert.ok(result !== null);
+        return recoverableController.proposedUserKey();  
+      }).then((proposedUserKey) => {
+        assert.equal(proposedUserKey, attackersOwnAddress); 
+        done();
+      }).catch(done);
+    });
+
+
+    it("And finally, a few days later the attacker can finalize the transfer of ownership", (done) => {
+      
+      
+      wait(longTimeLock + 1).then((result) => {
+        return recoverableController.changeUserKey();
+      }).then((result) => { 
+        return recoverableController.userKey();
+      }).then((userKey) => { 
+        assert.equal(userKey,attackersOwnAddress);
+        done();
+      }).catch(done);
+    });
   });
 });
